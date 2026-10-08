@@ -1,0 +1,258 @@
+@font-face { font-family: Poppins; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/Poppins/Poppins-400.ttf") format("truetype"); }
+@font-face { font-family: Poppins; font-style: normal; font-weight: 500; font-display: swap; src: url("../fonts/Poppins/Poppins-500.ttf") format("truetype"); }
+@font-face { font-family: Poppins; font-style: normal; font-weight: 600; font-display: swap; src: url("../fonts/Poppins/Poppins-600.ttf") format("truetype"); }
+@font-face { font-family: Poppins; font-style: normal; font-weight: 700; font-display: swap; src: url("../fonts/Poppins/Poppins-700.ttf") format("truetype"); }
+:root { --ink: #222222; --muted: #666667; --teal: #555555; --paper: #f6f6f6; --line: #d6d6d6; }
+html { scroll-behavior: smooth; scroll-padding-top: 32px; }
+* { box-sizing: border-box; }
+body { color: var(--ink); }
+.container.blog { flex: initial; padding-left: 24px; padding-right: 24px; }
+.container.blog.main { max-width: 1040px; width: 100%; margin: 0 auto; padding-top: 18px; padding-bottom: 18px; }
+p, li, td, th, figcaption, summary, details p { font-family: Charter, Georgia, serif; color: var(--ink); font-size: 19px; line-height: 1.7; }
+h1, h2, h3, .button, .eyebrow, .section-number, .author, .affiliation, .corresponding, .contents a, .label, .tag, label, output, .legend, .demo-status { font-family: Poppins, sans-serif; }
+strong { font-weight: 700; }
+var { font-family: Charter, Georgia, serif; font-style: italic; }
+a { text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { color: var(--teal); }
+a:focus-visible, summary:focus-visible, input:focus-visible, .table-wrapper:focus-visible { outline: 3px solid var(--teal); outline-offset: 5px; }
+.hero { background: #f4f6f8; border-bottom: 0; padding-top: 80px; padding-bottom: 80px; }
+.hero .blog-title { max-width: 1050px; width: 100%; margin: 0 auto; text-align: center; display: block; }
+.hero .title { max-width: 900px; margin: 0 auto 24px; padding: 0; font-size: 36px; line-height: 1.5; font-weight: 400; letter-spacing: 0; color: #353535; }
+.hero .title span { color: inherit; }
+.hero .title .model-name { white-space: nowrap; color: inherit; }
+.eyebrow, .section-number, .label { color: var(--teal); font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: 1.8px; }
+.hero .dek { max-width: 690px; margin: 0 auto 27px; font-size: 23px; line-height: 1.5; color: #4c616b; }
+.hero .author { font-size: 20px; font-weight: 400; margin: 0; padding: 0; }
+.hero .author a { font: inherit; color: inherit; line-height: inherit; text-decoration: underline; text-decoration-color: #aaa; text-underline-offset: 3px; }
+.affiliation { font-size: 15px; margin-top: 16px; color: #666; }
+.corresponding { font-size: 12px; margin-top: 7px; color: var(--muted); }
+.hero .info { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin: 40px 0 0; padding: 0; }
+a.button { display: inline-flex; align-items: center; gap: 22px; padding: 11px 20px; margin: 0; font-size: 14px; font-weight: 600; border: 1px solid #ddd; border-radius: 5px; text-decoration: none; background: rgba(0,0,0,.05); color: #000; }
+a.button.primary { color: #000; border-color: #ddd; background: rgba(0,0,0,.05); }
+a.button:hover { filter: brightness(.94); }
+.contents { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 24px; max-width: 1040px; margin: 0 auto; padding: 23px 20px; }
+.contents a { font-size: 12px; font-weight: 550; text-decoration: none; color: #52656e; }
+.contents a:hover { color: var(--teal); text-decoration: underline; }
+.container.blog.main.opening { padding-top: 17px; }
+h2 { font-size: 30px; font-weight: 600; line-height: 1.3; letter-spacing: 0; padding: 0; margin: 12px 0 24px; color: #353535; }
+h3 { font-size: 19px; line-height: 1.4; font-weight: 650; padding: 0; }
+p.text { margin: 0 0 20px; font-size: 18px; line-height: 1.6; font-weight: 400; }
+figure { margin: 16px 0; }
+figure img { width: 100%; height: auto; }
+figure.narrow { max-width: 700px; margin: 16px auto; }
+figure a { display: block; }
+figcaption { font-size: 15px; line-height: 1.55; color: #555; margin-top: 8px; text-align: center; }
+/* Remove the teaser's embedded white margins from its page layout. */
+.opening .wide > a { overflow: hidden; }
+.opening .wide img { margin-top: -9%; margin-bottom: -9%; }
+/* The phase diagram is exported on a page with large empty top/bottom margins. */
+#tracking figure { margin: 8px 0 16px; }
+#tracking figure > a { overflow: hidden; }
+#tracking figure img { margin-top: -17.8%; margin-bottom: -25%; }
+#tracking > p.text:first-of-type { margin-bottom: 8px; }
+figcaption a { display: inline; }
+.finding { padding: 23px 26px; margin: 32px 0 8px; background: transparent; border-left: 2px solid #bbb; border-radius: 0; }
+.finding p { font-size: 18px; line-height: 1.6; margin: 0; }
+.finding .label { font-size: 11px; margin-bottom: 10px; }
+.equation { width: 100%; max-width: 560px; font-family: Charter, Georgia, serif; font-size: clamp(18px, 2.2vw, 23px); text-align: center; background: #fafafa; border: 1px solid var(--line); border-radius: 5px; padding: 10px 14px; margin: 14px auto; line-height: 1.5; }
+details { padding: 20px 24px; margin: 26px 0; border: 1px solid var(--line); border-radius: 5px; }
+summary { cursor: pointer; font-size: 17px; font-weight: 700; }
+details p { font-size: 17px; margin-top: 17px; }
+.table-wrapper { overflow-x: auto; margin: 25px 0 12px; }
+table { width: 100%; border-collapse: collapse; }
+caption { text-align: left; font-family: Charter, Georgia, serif; font-size: 16px; color: var(--muted); padding-bottom: 14px; line-height: 1.5; }
+th, td { font-size: 15px; text-align: right; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; font-variant-numeric: tabular-nums; }
+th { font-weight: 600; }
+th:first-child { text-align: left; white-space: normal; min-width: 130px; }
+thead { border-top: 2px solid #666; border-bottom: 1px solid #666; }
+thead th { color: #40555e; }
+.highlight { background: #ececec; }
+.results-heading { margin: 8px 0 22px; font-size: 18px; font-weight: 400; line-height: 1.5; text-align: center; }
+.benchmark-results { width: 100%; max-width: 900px; position: static; margin-left: auto; margin-right: auto; }
+.benchmark-results table { min-width: 1180px; }
+.benchmark-results tbody tr:nth-child(3) { border-top: 2px solid #666; }
+.benchmark-results tbody th { position: sticky; left: 0; background: #f6f6f6; z-index: 1; }
+.benchmark-results thead th:first-child[rowspan] { min-width: 180px; }
+.benchmark-results thead tr:last-child th { min-width: 60px; }
+.benchmark-results th, .benchmark-results td { padding: 10px 8px; font-size: 13px; }
+.benchmark-results thead th { text-align: center; font-size: 13px; }
+.benchmark-results thead th:first-child { text-align: left; }
+.benchmark-results thead th[colspan] { text-align: center; }
+.benchmark-results tbody th { width: auto; min-width: 180px; font-size: 13px; white-space: nowrap; }
+.benchmark-results td strong { color: #222; }
+.benchmark-group th { background: #edf3f4; color: #40555e; font-family: Poppins, sans-serif; font-size: 12px !important; letter-spacing: .4px; padding-top: 9px; padding-bottom: 9px; }
+.small-note, .source-note { font-size: 14px; color: var(--muted); line-height: 1.6; margin: 13px 0 23px; }
+.explorer { padding: 25px; background: #fafafa; border: 1px solid var(--line); border-radius: 8px; margin: 30px 0 0; }
+.explorer-heading { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.tag { font-size: 10px; color: var(--teal); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+.explainer { font-size: 16px; color: var(--muted); margin-top: 13px; }
+canvas { width: 100%; height: auto; display: block; margin: 14px auto; }
+.legend { display: flex; justify-content: center; gap: 24px; font-size: 13px; color: #4f6570; }
+.legend span { display: flex; align-items: center; gap: 7px; }
+.swatch { width: 20px; height: 3px; display: inline-block; }
+.blue { background: #1f77b4; }.orange { background: #eb822c; }
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 23px; }
+label { display: block; font-size: 13px; font-weight: 550; color: #49616a; }
+output { float: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+input[type=range] { display: block; width: 100%; margin: 17px 0 12px; accent-color: var(--teal); }
+.demo-status { text-align: center; font-size: 13px; color: var(--teal); margin: 16px 0; }
+.explorer .small-note { margin-bottom: 0; }
+.closing { margin-top: 30px; padding: 32px; background: var(--paper); border-radius: 5px; }
+.closing p { font-size: 24px; line-height: 1.5; margin-bottom: 24px; }
+.resources { border-top: 1px solid var(--line); }
+.resource-links { display: flex; flex-wrap: wrap; gap: 15px 28px; }
+.resource-links a { font-size: 16px; color: var(--teal); }
+footer.container.blog { margin-top: 40px; padding: 30px 24px; background: #f5f7f8; }
+footer p { max-width: 842px; margin: 0 auto; font-size: 13px; color: var(--muted); font-style: normal; }
+.skip-link { position: absolute; left: 16px; top: -100px; background: white; padding: 10px; z-index: 10; }
+.skip-link:focus { top: 10px; }
+@media (max-width: 600px) {
+  .hero { padding-top: 45px; padding-bottom: 37px; }
+  .hero .title { font-size: 26px; line-height: 1.4; letter-spacing: 0; }
+  .hero .author { font-size: 18px; }
+  h2 { font-size: 24px; }
+  .hero .dek { font-size: 20px; }
+  .container.blog.main { padding: 25px 20px; }
+  p.text, p, li { font-size: 18px; }
+  .contents { gap: 11px 18px; padding: 20px; }
+  .finding, .closing, .explorer, details { padding: 20px; }
+  .controls { grid-template-columns: 1fr; gap: 8px; }
+  .explorer-heading { display: block; }
+  .tag { display: inline-block; margin-top: 9px; }
+  th, td { padding: 10px; font-size: 14px; }
+  .legend { gap: 13px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media print { .hero { background: white; } .contents, .explorer, .skip-link { display: none; } .container.blog.main { max-width: none; } figure, table { break-inside: avoid; } }
+
+/* Result slides: all results remain visible without JavaScript and in print. */
+.results-switcher { display: flex; justify-content: center; gap: 0; margin: 4px 0 14px; }
+.results-switcher[hidden], [role="tabpanel"][hidden] { display: none; }
+.results-switcher button { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.result-dot { width: 10px; height: 10px; border-radius: 50%; background: #c6c6c6; }
+.results-switcher button[aria-selected="true"] { color: var(--teal); }
+.results-switcher button[aria-selected="true"] .result-dot { background: #e2a3a3; transform: scale(1.4); }
+.results-switcher button:hover .result-dot { transform: scale(1.4); }
+.results-switcher button:focus-visible, [role="tabpanel"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; border-radius: 4px; }
+@media print { .results-switcher { display: none; } [role="tabpanel"][hidden] { display: block; } }
+
+@media print { .benchmark-results { width: 100%; left: auto; transform: none; } .benchmark-results table { min-width: 0; } .benchmark-results th, .benchmark-results td { min-width: 0 !important; white-space: normal; font-size: 8px; padding: 5px 2px; } }
+
+/* Accessible names for the reference-style dot navigation. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.benchmark-results th, .benchmark-results td { font-family: Poppins, sans-serif; font-size: 12px; }
+.benchmark-results tbody th { font-size: 12px; }
+caption { text-align: center; }
+.closing { padding: 24px 0; background: transparent; }
+.closing p { font-size: 20px; }
+footer p { max-width: 992px; text-align: center; }
+
+.paper-finding { margin: 26px 0 12px; padding: 18px 22px; background: #f6f6f6; border-left: 3px solid #aaa; }
+.paper-finding p + p { margin-top: 8px; }
+
+.dataset-switcher { gap: 20px; }
+.dataset-switcher button { width: auto; min-width: 70px; height: auto; min-height: 52px; padding: 8px; flex-direction: column; gap: 8px; font: 500 12px/1.4 Poppins, sans-serif; color: #666; text-transform: none; letter-spacing: 0; }
+.dataset-figure { margin: 16px 0; }
+
+/* Keep the interactive illustration and training figures compact. */
+.explorer { max-width: 540px; margin: 16px auto 0; padding: 14px 16px; }
+#rotation-demo { max-width: 300px; margin: 4px auto; }
+.dataset-switcher { flex-wrap: wrap; gap: 8px 20px; }
+.training-figure { margin: 16px 0; }
+.training-figure > a { display: flex; align-items: center; justify-content: center; height: 310px; }
+.training-figure img { width: auto; height: auto; max-width: 100%; max-height: 310px; object-fit: contain; }
+
+.dataset-comparison-scroll { overflow-x: auto; }
+.dataset-comparison { display: grid; grid-template-columns: 1fr 2.75fr; align-items: start; gap: 16px; min-width: 850px; }
+.dataset-comparison img { width: 100%; height: auto; }
+.dataset-comparison-scroll:focus-visible { outline: 2px solid #777; outline-offset: 3px; }
+
+/* Compact spacing for the language benchmark slides. */
+#benchmarks .results-switcher { margin: 0; }
+#benchmarks .results-heading { margin: 0 0 10px; }
+#benchmarks p.text { margin-bottom: 10px; }
+#benchmarks .small-note { margin: 6px 0 10px; }
+#benchmarks .table-wrapper { margin: 10px 0 8px; }
+#benchmarks caption { padding-bottom: 6px; }
+#benchmarks .paper-finding { margin-top: 16px; }
+
+/* Consistent, compact figures and tables throughout the narrative. */
+.opening .wide { max-width: 600px; margin: 12px auto; }
+#phase figure.narrow { max-width: 480px; margin: 12px auto; }
+#phase figure.narrow > a { max-width: 340px; margin: 0 auto; }
+#tracking figure { max-width: 660px; margin: 8px auto 12px; }
+.table-wrapper { max-width: 900px; margin: 12px auto 8px; }
+.table-wrapper:not(.benchmark-results) { max-width: 760px; }
+.table-wrapper th, .table-wrapper td { font-family: Poppins, sans-serif; font-size: 12px; line-height: 1.5; padding: 7px 8px; }
+.table-wrapper caption { font-size: 14px; line-height: 1.45; padding-bottom: 6px; }
+figure figcaption { font-size: 14px; line-height: 1.45; margin-top: 6px; }
+.dataset-figure, .training-figure { max-width: 900px; margin: 12px auto; }
+.small-note, .source-note { margin: 8px 0 14px; }
+.paper-finding { padding: 14px 18px; margin: 18px 0 10px; }
+.paper-finding p { font-size: 16px; }
+h2 { margin-bottom: 16px; }
+
+/* Align benchmark group headings, task labels, and values on the same centers. */
+.benchmark-results thead th,
+.benchmark-results thead th:first-child,
+.benchmark-results td { text-align: center; }
+.benchmark-results thead th[rowspan],
+.benchmark-results tbody th { text-align: left; }
+
+.explorer-heading { gap: 8px; flex-wrap: wrap; }
+.explorer-heading h3 { font-size: 16px; }
+.explorer .tag { font-size: 9px; }
+.explorer .explainer { font-size: 14px; line-height: 1.45; margin-top: 8px; }
+.explorer .controls { gap: 16px; margin-top: 12px; }
+.explorer label, .explorer .legend { font-size: 11px; }
+.explorer input[type=range] { margin: 10px 0 8px; }
+.explorer .demo-status { font-size: 11px; line-height: 1.4; margin: 8px 0; }
+.explorer .small-note { font-size: 12px; line-height: 1.4; margin-top: 8px; }
+
+/* Keep the two pretraining result sections close together. */
+#context [role="tabpanel"] > p.text:last-child { margin-bottom: 0; }
+#benchmarks .results-switcher { margin: 0; }
+#benchmarks .results-switcher button { height: 32px; }
+#benchmarks .results-heading { margin: 0 0 6px; }
+
+.opening .takeaways { list-style: disc; margin: 8px 0 18px; padding-left: 24px; }
+.opening .takeaways li { font-family: Charter, Georgia, serif; font-size: 18px; line-height: 1.6; margin: 0 0 10px; padding-left: 3px; }
+
+/* Keep subsection titles close to the preceding paragraph or slide controls. */
+#blog-main h3 { margin-top: 4px; margin-bottom: 8px; }
+#blog-main p.text:has(+ h3),
+#blog-main p.text:has(+ .results-switcher),
+#blog-main p.text:has(+ .explorer) { margin-bottom: 8px; }
+#blog-main .results-switcher { margin-top: 0; margin-bottom: 2px; }
+#blog-main .dataset-switcher button { min-height: 42px; padding: 4px 8px; gap: 6px; }
+#blog-main .explorer { margin-top: 10px; }
+#blog-main .explorer-heading h3 { margin: 0; }
+
+.full-benchmarks { padding: 12px 16px; margin: 14px 0; }
+.full-benchmarks summary { font-size: 14px; }
+.full-benchmarks[open] summary { margin-bottom: 12px; }
+
+#benchmarks .benchmark-highlights { display: block; list-style: disc; padding-left: 24px; margin: 8px 0 16px; }
+#benchmarks .benchmark-highlights li { font-family: Charter, Georgia, serif; font-size: 18px; line-height: 1.6; margin: 4px 0; }
+
+
+/* One spacing rule for every section, independent of the preceding content. */
+#blog-main > section.container.blog.main { display: flow-root; padding-top: 24px; padding-bottom: 0; }
+#blog-main > section.container.blog.main > h2 { margin: 0 0 14px; }
+#blog-main > section.container.blog.main > :last-child { margin-bottom: 0; }
+#blog-main [role="tabpanel"] > :last-child { margin-bottom: 0; }
+
+/* Equal metric columns and centered group labels for state statistics. */
+#accumulation-results-table { table-layout: fixed; min-width: 620px; }
+#accumulation-results-table thead th[rowspan] { width: 24%; text-align: left; }
+#accumulation-results-table thead th[colspan] { width: 38%; text-align: center; }
+#accumulation-results-table thead tr:last-child th,
+#accumulation-results-table td { text-align: center; }
+#accumulation-results-table th { min-width: 0; white-space: normal; }
+#accumulation-results-table tbody th { text-align: left; }
+
+/* Apply the same column alignment to every result table. */
+#blog-main .table-wrapper table thead th,
+#blog-main .table-wrapper table td { text-align: center; }
+#blog-main .table-wrapper table thead tr:first-child > th:first-child,
+#blog-main .table-wrapper table tbody th { text-align: left; }

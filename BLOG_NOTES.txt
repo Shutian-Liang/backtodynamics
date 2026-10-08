@@ -1,0 +1,142 @@
+Back to Dynamics: Designing Sequence Models Through Their State Dynamics
+
+English research blog, based on draft.md and the file structure of Part I.
+Entry point: index.html. Open directly in a browser; no build step is needed.
+
+Narrative
+  State evolution -> continuous generators -> LinOSS / Mamba -> DeltaNet / KDA
+  -> CKDA -> PG-19 and LongBench-E -> MDN -> single-step spectral limits
+  -> CyFA -> dynamics as a design dimension.
+  Derivations precede model summaries. DeltaNet, Gated DeltaNet, KDA, CKDA, MDN,
+  and CyFA each end with a concise dynamics summary. Supplemental CyFA readout
+  details remain in a native, keyboard-accessible details element.
+  The evaluations open with the long-context observation from our Mamba-3 blog,
+  followed by tests of officially released CKDA and KDA models on both benchmarks.
+  The conclusion places the model-scope paragraph before the open design questions.
+  The conclusion does not claim oscillatory dynamics are always better. It treats
+  state dynamics as one design dimension beyond memory decay and erasure. End in
+  bold with:
+  "Memory has a lifetime, but it also has a trajectory."
+
+Files
+  index.html                         English article, equations, complete results
+  assets/stylesheets/mamba-base.css   Existing Clarity base with local fonts
+  assets/stylesheets/mamba.css        Existing Part I visual style
+  assets/stylesheets/dynamics.css     Part II layout and responsive math/table rules
+  assets/scripts/dynamics.js          Local formula rendering and keyboard scrolling
+  assets/scripts/dynamics-demo.js     Shared-decay interactive state dynamics
+  assets/scripts/pair-limit-demo.js   One-pair and two-pair frequency comparison
+  assets/scripts/transport-demo.js    Slot and Fourier views of cyclic transport
+  assets/vendor/katex/               KaTeX 0.19.0, fonts, MIT license
+  assets/papers/understanding-mamba3.pdf  Copy of the paper distributed with Part I
+  static/dynamics/pg19-ckda-kda.png    Web rendering of the supplied PDF
+  figures/pg19_ckda_kda.pdf           Original evaluation figure
+  data/longbench_e_ckda_kda_tasks.csv  Original task scores
+  draft.md                           Original source draft
+
+Evidence and wording
+  LongBench-E: 13 tasks, 3,668 examples per model. Macro averages are unweighted
+  means of the task scores: CKDA 13.90230769, KDA 12.75076923, difference 1.15153846.
+  CKDA leads on 8 of 13 tasks. The horizontal table displays only model scores.
+  Task abbreviations match Part I, with full names available in header tooltips.
+  Scores are rounded to two decimals. Exact values, deltas, and example counts
+  remain in the CSV. The article omits example counts, the delta row, and
+  source/export notes to keep the focus on state dynamics.
+  These are task metrics, not a shared accuracy measure.
+
+  PG-19: the original PDF labels the comparison as 1.3B and displays 2K to 64K.
+  CKDA has lower perplexity at every displayed length. The advantage is not
+  monotonic in length. No point values were estimated or digitized from the image.
+  The 4K reference line agrees with the training context reported in the CKDA
+  paper, Table 5. Exact evaluated checkpoint IDs, evaluation scripts, decoding
+  settings, PG-19 sample counts, and uncertainty estimates are not in the supplied
+  artifacts; the article does not invent them or claim statistical significance.
+  The evaluation introduction links to the authors' official Hugging Face model
+  collection, which includes CKDA and KDA. It does not assert exact checkpoint IDs.
+
+  Mamba-3 comparison checked against ../arxiv/sections/experiments/train.tex:
+  187M and 444M; 100B FineWeb-Edu tokens; 2K training context; PG-19 up to 64K.
+  Both scales benefit in PG-19 perplexity. LongBench-E: 444M 10.61 -> 13.22;
+  187M 9.76 -> 9.53 (without -> with oscillation).
+
+  Spectral counts refer to a frozen single-head, single-column transition.
+  The one-pair bound does not apply unchanged to multi-step products or entire
+  networks. CKDA/KDA checkpoint comparisons do not isolate oscillation causally.
+  Linked original papers were checked for the architecture and spectrum claims.
+
+Maintenance
+  Keep derivations before conclusions, with model takeaways in the blue summary
+  boxes. CKDA's one-pair proof is shown directly without a root-counting heading.
+  CKDA's necessary-condition proof also appears before its summary. Symmetry
+  excludes non-real eigenvalues when beta <= 1 or every gate is nonnegative,
+  including zero gates. Negative gates and beta > 1 are necessary, not sufficient.
+  Keep CKDA concise: one rotation example, the two necessary conditions, and
+  the one-pair bound. Show short proofs directly before the final summary.
+  Prove MDN's one-pair bound directly from its scalar-gated recurrence. Project
+  onto the key and orthogonal directions, derive the triangular orthogonal
+  blocks, and compute the key block's quadratic. Keep the method citation
+  at introduction, without an appendix or theorem citation as the proof.
+  Keep this explanation compact with three displayed equations: the update,
+  the two types of blocks, and the key block's characteristic polynomial.
+  The limits section uses two target speeds, 20 and 50 degrees per step. Its
+  interactive frequency demo compares two linear readouts of one 2D oscillatory
+  state with readouts from two independent oscillatory states. It uses retention
+  0.98 and a 24-step horizon, with the same initial phase for every signal.
+  The one-pair slider changes a shared frequency. The two-pair view matches each
+  target independently. Actual readouts are blue dashed curves, Target A is
+  purple, and Target B is orange. Keep their legends and headings consistent.
+  This is an illustration of fixed oscillatory states,
+  not a simulation or evaluation of a trained CKDA or MDN checkpoint.
+  The formal claim remains exact one-step dynamics with fixed injective linear
+  state encoding. Keep the short eigenvector proof and the multi-head / multi-step
+  scope. Static curves and explanatory text remain visible without JavaScript.
+  The CyFA demo keeps a two-column, two-row comparison at every screen width.
+  CyFA's coupled-controls explanation focuses on fixed frequency ratios and
+  the (m-1)/2 pair count for odd m. Keep this paragraph within CyFA, without
+  comparison to CKDA/MDN or discussion of commutativity and overall expressivity.
+  Top: five-slot signed states without and with fractional cyclic shift.
+  Bottom: the same states' two cosine-sine Fourier pairs in an orthonormal basis.
+  Initialize only slot zero with [1, 0, 0, 0, 0], with unit state norm.
+  Both columns use retention 0.95. The right shifts 0.5 slots per step by default.
+  The initial preview is step 0. Reset returns to the single write in slot zero.
+  Step and shift sliders synchronize all views. Derive both initial
+  cosine-sine pairs and the DC coefficient from the orthonormal real Fourier
+  transform of this profile. Rotate pair j by 2*pi*j*delta*n/5, decay by 0.95^n,
+  and reconstruct the slot state exactly. This is the fractional cyclic shift,
+  not linear interpolation between neighbors. DC also decays by 0.95^n.
+  Both Fourier plots use the same fixed display scale. The slot and complete
+  Fourier states have equal norms. Static geometry remains visible without JS.
+  Playback is opt-in, stops at step 10, and suspends off-screen or in background
+  tabs. The animation interpolates the fixed transition between integer steps.
+  Use periods or conjunctions instead of semicolons in article prose. Keep HTML
+  source in multiline format, and use \quad rather than \qquad in formulas.
+  Prefer concrete descriptions over abstract transitions and repeated summaries.
+  Keep proofs readable while preserving their assumptions and fixed-transition scope.
+  Paper citations use author-year links at the first method introduction and for
+  specific attributed results. References are alphabetical by first author, with
+  full author lists (or Kimi Team), year, title, and venue or preprint identifier.
+  Conference entries use the publication year; PG-19 cites the 2019 arXiv version.
+  Keep each paper-citation data-reference value matched to its reference entry ID.
+  The opening demo compares decay and oscillation with exp(-a t) for both state
+  norms. Keep its card at a maximum width of 680px, with plots capped at 240px
+  on desktop and 180px on mobile. Use compact padding and control spacing.
+  Oscillation adds a planar rotation, completing one cycle in eight time
+  units at rotation speed 1. Playback starts on request, ends at t=12,
+  and suspends when off-screen or in a background tab. Sliders redraw the current
+  elapsed time; Reset restores the initial state and default parameters.
+  Edit prose and LaTeX in index.html. Inline math uses backslash-parentheses;
+  display math uses backslash-brackets. Escape HTML-sensitive characters within
+  formulas as &lt;, &gt;, and &amp;, especially matrix alignment ampersands.
+  Keep the PG-19 figure centered at a maximum width of 440px, fitting smaller
+  screens. Its top margin and the preceding paragraph's bottom margin are 8px.
+  Keep the closing design-comparison table centered at a maximum width of 820px.
+  Its prose cells wrap normally, with fixed columns, 14px text and 8px vertical
+  padding on desktop. Use 13px text and 6px vertical padding on small screens.
+  If the CSV changes, update the table, macro averages, deltas, and prose together.
+  Regenerate the PNG with Ghostscript:
+    gs -q -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -r300 \
+       -dTextAlphaBits=4 -dGraphicsAlphaBits=4 \
+       -sOutputFile=static/dynamics/pg19-ckda-kda.png figures/pg19_ckda_kda.pdf
+  Fonts, formula rendering, results, and the paper are local. Part I links use
+  ../blog/clarity-template-main/; preserve that sibling directory or update the
+  links when publishing elsewhere. Clarity attribution and its license remain.

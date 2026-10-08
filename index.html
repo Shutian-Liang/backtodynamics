@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      Back to Dynamics: Designing Sequence Models Through Their State Dynamics
+    </title>
+    <meta name="author" content="Shutian Liang, Yue Song">
+    <meta name="description"
+      content="From selective decay to oscillation and transport: a dynamical view of SSMs and linear attention, with CKDA/KDA results on LongBench-E and PG-19.">
+    <meta property="og:title" content="Back to Dynamics">
+    <meta property="og:description"
+      content="Designing sequence models through their state dynamics. A follow-up to our Mamba-3 study.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="static/dynamics/pg19-ckda-kda.png">
+    <link rel="stylesheet" href="assets/stylesheets/mamba-base.css">
+    <link rel="stylesheet" href="assets/stylesheets/mamba.css">
+    <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
+    <link rel="stylesheet" href="assets/stylesheets/dynamics.css">
+    <script defer src="assets/vendor/katex/katex.min.js"></script>
+    <script defer src="assets/vendor/katex/auto-render.min.js"></script>
+    <script defer src="assets/scripts/dynamics.js"></script>
+    <script defer src="assets/scripts/dynamics-demo.js"></script>
+    <script defer src="assets/scripts/pair-limit-demo.js"></script>
+    <script defer src="assets/scripts/transport-demo.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#blog-main">Skip to article</a>
+    <header class="container blog hero" id="top">
+      <div class="blog-title no-cover">
+        <h1 class="title">
+          Back to Dynamics<br><span class="subtitle">Designing Sequence Models Through Their State
+          Dynamics</span>
+        </h1>
+        <p class="author">
+          <a href="https://github.com/Shutian-Liang">Shutian Liang</a>, <a href="https://kingjamessong.github.io/">Yue Song</a><sup>*</sup>
+        </p>
+        <p class="affiliation">
+          College of AI, Tsinghua University
+        </p>
+        <p class="corresponding">
+          * Denotes corresponding author.
+        </p>
+      </div>
+    </header>
+    <main id="blog-main">
+      <!-- intro and demo -->
+
+      <section class="container blog main opening" id="perspective">
+        <h2>Bringing Dynamics into Model Design</h2>
+        <p class="text">
+          We usually describe sequence models through their architecture: an attention
+          rule, a state-space parameterization, a gating mechanism, or an efficient
+          recurrent update. These choices determine how information is written,
+          retained, and read. They also raise a more basic question: <strong>once
+          information enters the hidden state, how does it evolve over time?</strong>
+        </p>
+        <aside class="finding post-purpose" aria-label="What this post is about">
+          <p>
+            <strong>This post argues for treating state dynamics as one part of model
+            design</strong>, alongside writing, forgetting, and readout. We compare
+            decay, oscillation, and transport to understand how retained information
+            evolves and which dynamics a task may need.
+          </p>
+        </aside>
+        <p class="text">
+          A recurrent sequence model is a discrete-time dynamical system. If we
+          temporarily set aside new writes, its state evolves through a transition:
+        </p>
+        <div class="equation">
+          \[S_t=T_tS_{t-1}.\]
+        </div>
+        <p class="text">
+          A transition can shrink a state, preserve selected directions, rotate it
+          in a plane, or move information between memory slots. These behaviors
+          determine how a stored signal changes over time.
+        </p>
+        <figure class="state-demo" id="state-dynamics-demo"
+          aria-labelledby="state-demo-title"
+          aria-describedby="state-demo-caption">
+          <div class="state-demo-heading">
+            <h3 id="state-demo-title">Same Retention, Different Dynamics</h3>
+            <span class="state-demo-norm">
+              State norm · <span id="state-demo-norm">1.00</span> in both
+            </span>
+          </div>
+          <p class="state-demo-intro">
+            One initial signal, no new writes. Change how fast it fades and how it
+            moves.
+          </p>
+          <div class="state-demo-panels">
+            <div class="state-demo-panel state-demo-decay">
+              <div class="state-demo-panel-heading">
+                <h4>Decay</h4>
+                <p>
+                  Keep the direction.
+                </p>
+              </div>
+              <svg viewBox="0 0 300 220" role="img"
+                aria-labelledby="state-decay-title state-decay-description">
+                <title id="state-decay-title">Decay</title>
+                <desc id="state-decay-description">
+                  An arrow shrinks along a fixed direction. Its length equals the shared
+                  state norm.
+                </desc>
+                <circle class="state-demo-guide" cx="150" cy="110" r="82"/>
+                <path class="state-demo-axis" d="M52 110H248M150 12V208"/>
+                <path class="state-demo-trail" id="state-decay-trail"
+                  d="M232 110L232 110"/>
+                <circle class="state-demo-origin" cx="150" cy="110" r="3"/>
+                <g class="state-demo-arrow" id="state-decay-arrow"
+                  transform="translate(150 110)">
+                  <path d="M0 0H73"/>
+                  <path class="state-demo-arrowhead" d="M82 0L71 -5L71 5Z"/>
+                </g>
+              </svg>
+            </div>
+            <div class="state-demo-panel state-demo-oscillation">
+              <div class="state-demo-panel-heading">
+                <h4>Oscillation</h4>
+                <p>
+                  Turn while fading.
+                </p>
+              </div>
+              <svg viewBox="0 0 300 220" role="img"
+                aria-labelledby="state-oscillation-title state-oscillation-description">
+                <title id="state-oscillation-title">Oscillation</title>
+                <desc id="state-oscillation-description">
+                  An arrow rotates as it shrinks, tracing a spiral. Its length matches
+                  the decay arrow at every instant.
+                </desc>
+                <circle class="state-demo-guide" cx="150" cy="110" r="82"/>
+                <path class="state-demo-axis" d="M52 110H248M150 12V208"/>
+                <path class="state-demo-trail" id="state-oscillation-trail"
+                  d="M232 110L232 110"/>
+                <circle class="state-demo-origin" cx="150" cy="110" r="3"/>
+                <g class="state-demo-arrow" id="state-oscillation-arrow"
+                  transform="translate(150 110)">
+                  <path d="M0 0H73"/>
+                  <path class="state-demo-arrowhead" d="M82 0L71 -5L71 5Z"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="state-demo-controls" hidden>
+            <div class="state-demo-actions">
+              <button type="button" id="state-demo-play">Play</button>
+              <button type="button" id="state-demo-reset">Reset</button>
+              <span class="state-demo-time">
+                Time <span id="state-demo-time">0.0</span> / 12
+              </span>
+            </div>
+            <div class="state-demo-sliders">
+              <div>
+                <label for="state-demo-decay">
+                  Decay strength <output id="state-demo-decay-value" for="state-demo-decay">0.12</output>
+                </label>
+                <input id="state-demo-decay" type="range" min="0" max="0.35"
+                  step="0.01" value="0.12">
+              </div>
+              <div>
+                <label for="state-demo-speed">
+                  Rotation speed <output id="state-demo-speed-value" for="state-demo-speed">1.0×</output>
+                </label>
+                <input id="state-demo-speed" type="range" min="0" max="2" step="0.1"
+                  value="1">
+              </div>
+            </div>
+            <p class="state-demo-hint">
+              Try zero decay: both states keep their size, while the oscillating state
+              keeps turning.
+            </p>
+            <p class="sr-only" id="state-demo-status" role="status"></p>
+          </div>
+          <noscript>
+            <p class="state-demo-hint">
+              Enable JavaScript to compare decay and oscillation and adjust their
+              parameters.
+            </p>
+          </noscript>
+          <figcaption id="state-demo-caption">
+            Memory has a lifetime, but it also has a trajectory.
+          </figcaption>
+        </figure>
+      </section>
+      <!-- dynamics -->
+
+      <section class="container blog main" id="generators">
+        <h2>From Recurrences to Differential Equations</h2>
+        <p class="text">
+          Differential equations describe how a state evolves in continuous time.
+          A linear homogeneous system has the form \(\dot S(\tau)=A(\tau)S(\tau)\),
+          where \(A\) is its generator. Holding the generator fixed over an interval of
+          length \(\Delta_t\) gives an exact discrete transition:
+        </p>
+        <div class="equation">
+          \[S(\tau_t)=e^{A_t\Delta_t}S(\tau_{t-1}),\quad T_t=e^{A_t\Delta_t}.\]
+        </div>
+        <p class="text">
+          Conversely, when \(T_t\) admits a real matrix logarithm, we can construct
+          \(A_t=\log(T_t)/\Delta_t\). The transition’s eigenvalues and invariant
+          subspaces tell us which components decay, persist, or change phase.
+        </p>
+        <!-- <p class="small-note">Throughout this post, a “mode” refers to the homogeneous transition with the current coefficients held fixed. Inputs can change those coefficients at every token. A real matrix logarithm need not exist or be unique, and a frozen spectrum does not describe every property of a product of changing transitions.</p> -->
+      </section>
+      <!-- oscillator -->
+
+      <section class="container blog main" id="ssms">
+        <h2>Different Architectures, Related Dynamics</h2>
+        <p class="text">
+          Different architectures can produce similar state dynamics. The examples
+          below reach decay and oscillation from two starting points.
+        </p>
+        <h3>Starting from an oscillator</h3>
+        <p class="text">
+          LinOSS (<a class="paper-citation" data-reference="ref-linoss"
+            href="https://arxiv.org/abs/2410.03943">Rusch &amp; Rus, 2025</a>) starts from driven linear oscillators.
+          For a nonzero scalar frequency, its continuous-time dynamics can be written as
+        </p>
+        <div class="equation">
+          \[\ddot x+\omega^2x=Bu(\tau),\quad\omega&gt;0.\]
+        </div>
+        <p class="text">
+          Without the forcing term, the first-order state \((x,\dot x)\) has generator
+          eigenvalues \(\pm i\omega\). Rescaling position and velocity reveals a
+          two-dimensional rotation. D-LinOSS (<a class="paper-citation" data-reference="ref-dlinoss"
+            href="https://arxiv.org/abs/2505.12171">Boyer et al., 2025</a>) adds learnable
+          damping. In our notation, a mode takes the form
+        </p>
+        <div class="equation">
+          \[\ddot x+2a\dot x+\omega_0^2x=Bu(\tau).\]
+        </div>
+        <p class="text">
+          When \(0&lt;a&lt;\omega_0\), the generator eigenvalues are
+          \(-a\pm i\sqrt{\omega_0^2-a^2}\). The state both loses amplitude and advances
+          in phase. This describes the continuous system without forcing. The
+          discrete behavior also depends on the chosen discretization.
+        </p>
+        <h3>Starting from selective decay</h3>
+        <p class="text">
+          Mamba-1 (<a class="paper-citation" data-reference="ref-mamba"
+            href="https://arxiv.org/abs/2312.00752">Gu &amp; Dao, 2024</a>) uses selective
+          state spaces. With its real, negative diagonal parameterization, a
+          homogeneous state mode follows \(z_t=\rho_tz_{t-1}\), \(0&lt;\rho_t&lt;1\).
+          The input controls retention. With the parameters held fixed, the
+          corresponding continuous system is \(\dot z=-a_tz\), where
+          \(a_t=-\log\rho_t/\Delta_t\).
+        </p>
+        <p class="text">
+          Mamba-2 (<a class="paper-citation" data-reference="ref-mamba2"
+            href="https://arxiv.org/abs/2405.21060">Dao &amp; Gu, 2024</a>) reorganizes computation through structured
+          state-space duality and uses a scalar state transition within each head.
+          Without new writes, the state still undergoes selective decay.
+          Mamba-3 (<a class="paper-citation" data-reference="ref-mamba3"
+            href="https://arxiv.org/abs/2603.15569">Lahoti et al., 2026</a>) adds phase
+          evolution through complex state updates. In a suitable real coordinate
+          system, a rotary pair follows
+        </p>
+        <div class="equation">
+          \[z_t=\rho_tR(\theta_t)z_{t-1},\quad R(\theta)=\begin{bmatrix}\cos\theta&amp;-\sin\theta\\\sin\theta&amp;\cos\theta\end{bmatrix}.\]
+        </div>
+        <p class="text">
+          Here, \(\rho_t\) sets decay and \(\theta_t\) advances phase. With
+          \(\nu_t=\theta_t/\Delta_t\) and
+          \(J=\left[\begin{smallmatrix}0&amp;-1\\1&amp;0\end{smallmatrix}\right]\),
+        </p>
+        <div class="equation">
+          \[\rho_tR(\theta_t)=e^{(-a_tI+\nu_tJ)\Delta_t},\quad\operatorname{spec}(-a_tI+\nu_tJ)=\{-a_t\pm i\nu_t\}.\]
+        </div>
+        <p class="text">
+          D-LinOSS adds damping to an oscillator. Mamba-3 adds rotation to a decaying
+          state. In suitable coordinates and with parameters held fixed, both give
+          <strong>decay plus rotation</strong>. Eliminating one coordinate of a rotating
+          pair gives
+        </p>
+        <div class="equation">
+          \[\boxed{\ddot x+2a\dot x+(a^2+\nu^2)x=0.}\]
+        </div>
+        <p class="text">
+          For \(a&gt;0\) and \(\nu\ne0\), this is an underdamped oscillator, just as
+          in D-LinOSS above.
+        </p>
+      </section>
+
+      <section class="container blog main" id="relaxation">
+        <h2>Linear Attention: Which Directions Should Forget?</h2>
+        <p class="text">
+          Now consider a matrix state that stores key–value associations. We write
+          its update with the transition acting from the left:
+        </p>
+        <div class="equation">
+          \[S_t=T_tS_{t-1}+U_t,\quad S_t\in\mathbb R^{d_k\times d_v},\quad o_t=S_t^\top q_t.\]
+        </div>
+        <p class="text">
+          The same \(T_t\) acts on every value column. We can therefore analyze one
+          column \(s_t\in\mathbb R^{d_k}\) through \(s_t=T_ts_{t-1}\). Below, keys have
+          unit norm, and we first consider positive gates with \(0&lt;\beta_t&lt;1\).
+          Each model summary describes one head’s homogeneous transition on a state
+          column, with the current key and gates held fixed.
+        </p>
+        <h3>DeltaNet: forgetting along the current key</h3>
+        <p class="text">
+          DeltaNet (<a class="paper-citation" data-reference="ref-deltanet"
+            href="https://arxiv.org/abs/2406.06484">Yang et al., 2024</a>) writes a correction to the association
+          currently stored at the key:
+        </p>
+        <div class="equation">
+          \[\begin{aligned}S_t&amp;=S_{t-1}+\beta_tk_t(v_t-S_{t-1}^\top k_t)^\top\\&amp;=(I-\beta_tk_tk_t^\top)S_{t-1}+\beta_tk_tv_t^\top.\end{aligned}\]
+        </div>
+        <p class="text">
+          Let \(P_t=k_tk_t^\top\). Since \(\|k_t\|_2=1\), \(P_t\) is an orthogonal
+          projector. The component parallel to the key shrinks by \(1-\beta_t\). The
+          orthogonal component stays unchanged:
+        </p>
+        <div class="equation">
+          \[T_ts=(1-\beta_t)s_\parallel+s_\perp.\]
+        </div>
+        <p class="text">
+          The corresponding continuous system is \(\dot s=-b_tP_ts\), with
+          \(b_t=-\log(1-\beta_t)/\Delta_t\). DeltaNet implements <strong>relaxation in
+          an input-selected direction</strong>.
+        </p>
+        <aside class="finding dynamics-summary" data-model="DeltaNet">
+          <p>
+            <strong>DeltaNet: one decaying direction.</strong> The current key
+            direction retains a fraction \(1-\beta_t\) of its state. Orthogonal
+            directions are preserved.
+          </p>
+        </aside>
+        <h3>Gated DeltaNet: adding a common forgetting rate</h3>
+        <p class="text">
+          Gated DeltaNet (<a class="paper-citation" data-reference="ref-gated-deltanet"
+            href="https://arxiv.org/abs/2412.06464">Yang et al., 2025</a>) adds a scalar forget gate
+          \(0&lt;\alpha_t&lt;1\), giving \(T_t=\alpha_t(I-\beta_tP_t)\).
+        </p>
+        <p class="text">
+          To see how this acts in different directions, split a state column into
+          \(s=s_\parallel+s_\perp\), where \(s_\parallel=P_t s\) is parallel to
+          the current key and \(k_t^\top s_\perp=0\). Since the key has unit norm,
+          \(P_t s_\parallel=s_\parallel\), while
+        </p>
+        <div class="equation">
+          \[P_t s_\perp=k_t(k_t^\top s_\perp)=0.\]
+        </div>
+        <p class="text">
+          Applying the full transition therefore gives
+        </p>
+        <div class="equation">
+          \[
+          \begin{aligned}
+          T_t s&amp;=\alpha_t(I-\beta_tP_t)(s_\parallel+s_\perp)\\
+          &amp;=\alpha_t(1-\beta_t)s_\parallel+\alpha_t s_\perp.
+          \end{aligned}
+          \]
+        </div>
+        <p class="text">
+          The delta factor leaves every component orthogonal to the current key
+          unchanged, so its retention factor is just \(\alpha_t\). The key
+          component receives both the shared factor \(\alpha_t\) and the extra
+          factor \(1-\beta_t\), giving \(\alpha_t(1-\beta_t)\).
+        </p>
+        <p class="text">
+          Because \(I\) and \(P_t\) commute, its generator is
+        </p>
+        <div class="equation">
+          \[\dot s=(-a_tI-b_tP_t)s,\quad a_t=-\frac{\log\alpha_t}{\Delta_t}.\]
+        </div>
+        <p class="text">
+          This separates shared forgetting from the extra correction along the key.
+        </p>
+        <aside class="finding dynamics-summary" data-model="Gated DeltaNet">
+          <p>
+            <strong>Gated DeltaNet: shared decay plus extra decay along the
+            key.</strong> Orthogonal directions retain \(\alpha_t\). The key
+            direction retains \(\alpha_t(1-\beta_t)\), so it forgets faster.
+          </p>
+        </aside>
+        <h3>KDA: different decay rates across coordinates</h3>
+        <p class="text">
+          Kimi Delta Attention (KDA) (<a class="paper-citation" data-reference="ref-kimi-linear"
+            href="https://arxiv.org/abs/2510.26692">Kimi Team, 2025</a>) replaces the scalar gate
+          with a diagonal gate:
+        </p>
+        <div class="equation">
+          \[\begin{aligned}D_t&amp;=\operatorname{Diag}(\alpha_{t,1},\ldots,\alpha_{t,d_k}),\\S_t&amp;=(I-\beta_tP_t)D_tS_{t-1}+\beta_tk_tv_t^\top.\end{aligned}\]
+        </div>
+        <p class="text">
+          The diagonal gate scales each state coordinate by \(\alpha_{t,i}\).
+          The delta correction can then mix coordinates, so we need to analyze
+          their combined effect.
+        </p>
+        <p class="text">
+          With \(0&lt;\alpha_{t,i}&lt;1\) and \(0&lt;\beta_t&lt;1\), hold the
+          current key and gates fixed over an interval \(\Delta&gt;0\). Drop the
+          time index and write \(H=I-\beta kk^\top\), so \(T=HD\). Rescaling the
+          state by \(D^{1/2}\) gives the transition
+        </p>
+        <div class="equation">
+          \[\widetilde T=D^{1/2}TD^{-1/2}=D^{1/2}HD^{1/2}\]
+        </div>
+        <p class="text">
+          This matrix is symmetric. Since \((1-\beta)I\preceq H\preceq I\), its
+          eigenvalues satisfy
+        </p>
+        <div class="equation">
+          \[0&lt;(1-\beta)\min_i\alpha_i\le\lambda_j(T)\le\max_i\alpha_i&lt;1.\]
+        </div>
+        <p class="text">
+          Let \(U\) be an orthogonal matrix satisfying
+          \(\widetilde T=U\operatorname{Diag}(\lambda_j)U^\top\). First rescale
+          the state by \(D^{1/2}\), then rotate it by \(U^\top\):
+        </p>
+        <div class="equation">
+          \[y=U^\top D^{1/2}s,\quad y_{n+1,j}=\lambda_j y_{n,j}.\]
+        </div>
+        <p class="text">
+          Since \(0&lt;\lambda_j&lt;1\), each transformed coordinate decays. The
+          corresponding continuous dynamics over the interval \(\Delta\) are
+        </p>
+        <div class="equation">
+          \[\dot y_j=-\gamma_j y_j,\quad \gamma_j=-\frac{\log\lambda_j}{\Delta}&gt;0.\]
+        </div>
+        <p class="text">
+          Larger \(\gamma_j\) means faster decay. Smaller \(\gamma_j\) means longer
+          retention. These coordinates generally differ from the original state
+          axes, and their retention factors \(\lambda_j\) reflect both the
+          diagonal gate and the delta correction. This coordinate system can change
+          when the key or gates change.
+        </p>
+        <!-- <p class="text">
+          The positive-gate similarity argument still gives a real spectrum if
+          \(\beta\) exceeds one, but some eigenvalues can then be negative. The
+          independent positive-decay description above uses \(0&lt;\beta&lt;1\).
+        </p> -->
+        <aside class="finding dynamics-summary" data-model="KDA">
+          <p>
+            <strong>KDA: different decay rates across coordinates.</strong> After
+            rescaling and rotation, each coordinate decays at a positive rate
+            \(\gamma_j\). These rates can differ, allowing different retention
+            timescales.
+          </p>
+        </aside>
+        <p class="text">
+          So far, the key and gates control which components decay and how quickly.
+          Can the state also oscillate while it is retained?
+        </p>
+      </section>
+
+      <section class="container blog main" id="ckda">
+        <h2>Complex KDA: Oscillation Through Signed Gates</h2>
+        <p class="text">
+          Complex KDA (CKDA) (<a class="paper-citation" data-reference="ref-ckda"
+            href="https://arxiv.org/abs/2609.24797">Siems et al., 2026</a>) expands
+          KDA’s gate ranges, allowing a state to rotate as well as decay:
+        </p>
+        <div class="equation">
+          \[T_t=(I-\beta_tk_tk_t^\top)D_t,\quad\beta_t\in[0,2],\quad\alpha_{t,i}\in[-1,1].\]
+        </div>
+        <p class="text">
+          For a two-dimensional example with fixed gates and key, choose
+          \(0&lt;\rho&lt;1\) and \(0&lt;\theta&lt;\pi/2\). A signed gate and
+          the delta correction give
+        </p>
+        <div class="equation">
+          \[
+          \begin{aligned}
+          k&amp;=\begin{bmatrix}\cos\theta\\\sin\theta\end{bmatrix},\quad
+          D=\rho\operatorname{Diag}(-1,1),\quad\beta=2,\\
+          T&amp;=(I-2kk^\top)D=\rho R(2\theta).
+          \end{aligned}
+          \]
+        </div>
+        <p class="text">
+          Its eigenvalues are \(\rho e^{\pm2i\theta}\), a non-real conjugate pair
+          that gives damped oscillation.
+        </p>
+        <p class="text">
+          The necessary conditions follow from symmetry. Write \(T=HD\), where
+          \(H=I-\beta kk^\top\) and \(\|k\|_2=1\). If \(\beta&lt;1\), then
+          \(H\) is positive definite, and
+        </p>
+        <div class="equation">
+          \[H^{-1/2}TH^{1/2}=H^{1/2}DH^{1/2}.\]
+        </div>
+        <p class="text">
+          The matrix on the right is symmetric, so all eigenvalues are real.
+          The case \(\beta=1\) follows by continuity. If all \(\alpha_i\ge0\),
+          the determinant identity gives
+        </p>
+        <div class="equation">
+          \[\det(\lambda I-T)=\det(\lambda I-D^{1/2}HD^{1/2}).\]
+        </div>
+        <p class="text">
+          Since \(D^{1/2}HD^{1/2}\) is symmetric, this also forces a real
+          spectrum. Thus <strong>a non-real conjugate pair requires both
+          \(\beta&gt;1\) and \(\alpha_i&lt;0\) for at least one \(i\).</strong>
+          These are necessary conditions, not a guarantee of oscillation.
+        </p>
+        <p class="text">
+          To count the possible oscillatory pairs, first assume the gates are
+          distinct and nonzero, ordered as \(\alpha_1&lt;\cdots&lt;\alpha_d\),
+          and that every key coordinate is nonzero. The characteristic polynomial is
+        </p>
+        <div class="equation">
+          \[\chi_T(\lambda)=\prod_{i=1}^{d}(\lambda-\alpha_i)\left(1+\beta\sum_{i=1}^{d}\frac{\alpha_i k_i^2}{\lambda-\alpha_i}\right).\]
+        </div>
+        <p class="text">
+          Between two adjacent gates of the same sign, the expression in parentheses
+          is continuous and runs from one sign of infinity to the other. It must
+          therefore cross zero, giving a real eigenvalue. At most one interval
+          separates negative and positive gates, so at least \(d-2\) intervals
+          contain a real root. This leaves at most two non-real roots. Because
+          \(T\) is real, they must form <strong>at most one non-real conjugate
+          pair.</strong> The same bound holds for repeated or zero gates and zero
+          key coordinates by continuity.
+        </p>
+        <aside class="finding dynamics-summary" data-model="CKDA">
+          <p>
+            <strong>CKDA can support oscillation.</strong> A non-real pair requires
+            \(\beta&gt;1\) and at least one \(\alpha_i&lt;0\). Each fixed
+            transition per head and state column has <strong>at most one such
+            pair.</strong>
+          </p>
+        </aside>
+      </section>
+
+      <section class="container blog main" id="experiments"
+        aria-label="Long-context evaluations">
+        <p class="text">
+          In our <a href="../blog/clarity-template-main/index.html#context">Mamba-3 blog post</a> (<a class="paper-citation" data-reference="ref-understanding-mamba3"
+            href="assets/papers/understanding-mamba3.pdf">Liang &amp; Song, 2026</a>), we
+          observed lower long-context perplexity in models trained with oscillation.
+          To explore long-context behavior in linear attention, we also evaluated
+          the <a href="https://huggingface.co/collections/openeurollm/complexkda">officially
+          released CKDA and KDA models</a> on PG-19 (<a class="paper-citation" data-reference="ref-pg19"
+            href="https://arxiv.org/abs/1911.05507">Rae et al., 2019</a>) and
+          LongBench-E (<a class="paper-citation" data-reference="ref-longbench"
+            href="https://aclanthology.org/2024.acl-long.172/">Bai et al., 2024</a>).
+        </p>
+        <h3>PG-19: lower perplexity beyond the training context</h3>
+        <p class="text">
+          CKDA maintains lower perplexity than KDA from 2K to 64K, including beyond the
+          4K training context reported by <a class="paper-citation" data-reference="ref-ckda"
+            href="https://arxiv.org/html/2609.24797">Siems et al. (2026)</a>.
+        </p>
+        <figure class="pg19-figure">
+          <a href="figures/pg19_ckda_kda.pdf"
+            aria-label="Open the original CKDA and KDA PG-19 figure as a PDF">
+            <img src="static/dynamics/pg19-ckda-kda.png" width="1127" height="767"
+              loading="lazy"
+              alt="PG-19 perplexity for 1.3B KDA in blue and CKDA in orange at 2K, 4K, 8K, 16K, 32K, and 64K tokens. CKDA is lower at every length. Both curves fall to their lowest point at 32K, then rise at 64K. A dotted line marks 4K.">
+          </a>
+          <figcaption>
+            PG-19 perplexity at 1.3B. Lower is better.
+            The gray dotted line marks the 4K training context length.
+          </figcaption>
+        </figure>
+        <h3>LongBench-E: gains vary by task</h3>
+        <p class="text">
+          CKDA averages <strong>13.90</strong> across the 13 tasks, compared with
+          <strong>12.75</strong> for KDA, and scores higher on 8 of them.
+        </p>
+        <div class="table-wrapper longbench-results" role="region" tabindex="0"
+          aria-label="Complete LongBench-E results for CKDA and KDA. Scroll horizontally on small screens">
+          <table id="longbench-results">
+            <caption>
+              LongBench-E scores. Higher is better.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">
+                  Model
+                </th>
+                <th scope="col" data-task="qasper" title="Qasper">
+                  QA
+                </th>
+                <th scope="col" data-task="multifieldqa_en" title="MultiFieldQA-en">
+                  MQA
+                </th>
+                <th scope="col" data-task="hotpotqa" title="HotpotQA">
+                  HQA
+                </th>
+                <th scope="col" data-task="2wikimqa" title="2WikiMQA">
+                  2WM
+                </th>
+                <th scope="col" data-task="gov_report" title="GovReport">
+                  GR
+                </th>
+                <th scope="col" data-task="multi_news" title="MultiNews">
+                  MN
+                </th>
+                <th scope="col" data-task="trec" title="TREC">
+                  TR
+                </th>
+                <th scope="col" data-task="triviaqa" title="TriviaQA">
+                  TQA
+                </th>
+                <th scope="col" data-task="samsum" title="SAMSum">
+                  SS
+                </th>
+                <th scope="col" data-task="passage_count" title="Passage Count">
+                  PC
+                </th>
+                <th scope="col" data-task="passage_retrieval_en" title="Passage Retrieval-en">
+                  PR
+                </th>
+                <th scope="col" data-task="lcc" title="Long Code Completion">
+                  LCC
+                </th>
+                <th scope="col" data-task="repobench-p" title="RepoBench-P">
+                  RB
+                </th>
+                <th scope="col" data-task="MACRO_AVERAGE" title="Macro average score">
+                  Avg.
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-metric="KDA">
+                <th scope="row">
+                  KDA
+                </th>
+                <td>
+                  5.61
+                </td>
+                <td>
+                  13.32
+                </td>
+                <td>
+                  <strong>6.80</strong>
+                </td>
+                <td>
+                  7.95
+                </td>
+                <td>
+                  <strong>9.11</strong>
+                </td>
+                <td>
+                  <strong>10.34</strong>
+                </td>
+                <td>
+                  23.00
+                </td>
+                <td>
+                  23.69
+                </td>
+                <td>
+                  24.75
+                </td>
+                <td>
+                  <strong>3.24</strong>
+                </td>
+                <td>
+                  <strong>6.47</strong>
+                </td>
+                <td>
+                  14.96
+                </td>
+                <td>
+                  16.52
+                </td>
+                <td>
+                  12.75
+                </td>
+              </tr>
+              <tr data-metric="CKDA">
+                <th scope="row">
+                  CKDA
+                </th>
+                <td>
+                  <strong>5.87</strong>
+                </td>
+                <td>
+                  <strong>13.36</strong>
+                </td>
+                <td>
+                  6.76
+                </td>
+                <td>
+                  <strong>8.23</strong>
+                </td>
+                <td>
+                  8.99
+                </td>
+                <td>
+                  7.60
+                </td>
+                <td>
+                  <strong>30.00</strong>
+                </td>
+                <td>
+                  <strong>26.66</strong>
+                </td>
+                <td>
+                  <strong>26.06</strong>
+                </td>
+                <td>
+                  3.14
+                </td>
+                <td>
+                  5.89
+                </td>
+                <td>
+                  <strong>18.58</strong>
+                </td>
+                <td>
+                  <strong>19.59</strong>
+                </td>
+                <td>
+                  <strong>13.90</strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text">
+          <strong>CKDA performs better than KDA in these evaluations.</strong>
+          It achieves lower PG-19 perplexity at every tested context length from
+          2K to 64K and a higher average score on LongBench-E, with gains on 8 of
+          the 13 tasks.
+        </p>
+      </section>
+
+      <section class="container blog main" id="momentum">
+        <h2>Momentum: Another Route to Oscillation</h2>
+        <p class="text">
+          Momentum DeltaNet (MDN) (<a class="paper-citation" data-reference="ref-mdn"
+            href="https://arxiv.org/abs/2605.05838">Huang et al., 2026</a>) adds a
+          momentum state \(M_t\) to the memory update:
+        </p>
+        <div class="equation">
+          \[
+          \begin{aligned}
+          M_t&amp;=\mu_tM_{t-1}-\eta_tk_t(v_t-\alpha_tS_{t-1}^\top k_t)^\top,\\
+          S_t&amp;=\alpha_tS_{t-1}-\beta_tM_t.
+          \end{aligned}
+          \]
+        </div>
+        <p class="text">
+          Hold the scalar coefficients and unit key fixed, and set aside new
+          writes. Let \(s_n\) and \(m_n\) be a memory column and its momentum.
+          Their updates are \(m_{n+1}=\mu m_n+\alpha\eta Ps_n\) and
+          \(s_{n+1}=\alpha s_n-\beta m_{n+1}\), where \(P=kk^\top\) projects
+          onto the key direction.
+        </p>
+        <p class="text">
+          Each direction has two components: memory and momentum. Since \(Pk=k\)
+          and \(Pe=0\) for \(e\perp k\), the key direction has the block \(B\).
+          Each of the \(d_k-1\) perpendicular directions has an independent
+          block \(B_\perp\):
+        </p>
+        <div class="equation">
+          \[
+          \begin{aligned}
+          B&amp;=\begin{bmatrix}\alpha(1-\beta\eta)&amp;-\beta\mu\\
+          \alpha\eta&amp;\mu\end{bmatrix},\\
+          B_\perp&amp;=\begin{bmatrix}\alpha&amp;-\beta\mu\\0&amp;\mu\end{bmatrix}.
+          \end{aligned}
+          \]
+        </div>
+        <p class="text">
+          \(B_\perp\) is triangular, so its eigenvalues \(\alpha\) and \(\mu\)
+          are real. For the key block, write \(c=\alpha(1-\beta\eta)+\mu\).
+          Its eigenvalues are roots of
+        </p>
+        <div class="equation">
+          \[\det(\lambda I-B)=\lambda^2-c\lambda+\alpha\mu.\]
+        </div>
+        <p class="text">
+          Only the key block can have non-real eigenvalues. Its quadratic has
+          just two roots, so the transition has <strong>at most one conjugate
+          pair.</strong> The pair appears when \(c^2&lt;4\alpha\mu\). With
+          \(0&lt;\alpha,\mu&lt;1\), its modulus is \(\sqrt{\alpha\mu}&lt;1\),
+          so the oscillation decays over time.
+        </p>
+        <aside class="finding dynamics-summary" data-model="MDN">
+          <p>
+            <strong>MDN can support oscillation.</strong> Each fixed transition per
+            head and state column has <strong>at most one non-real conjugate
+            pair.</strong>
+          </p>
+        </aside>
+      </section>
+
+      <section class="container blog main" id="limits">
+        <h2>What Are the Limits of a Single Oscillator?</h2>
+        <p class="text">
+          A single oscillator, represented by one non-real conjugate pair,
+          has one oscillation frequency. Its linear readouts can differ in
+          amplitude and phase, but they share that frequency. Suppose two pieces
+          of memory need different rotation speeds: 20° and 50° per step. The
+          demo shows why one fixed oscillator cannot sustain both frequencies.
+        </p>
+        <figure class="pair-demo" id="pair-limit-demo"
+          aria-labelledby="pair-demo-title" aria-describedby="pair-demo-caption">
+          <h3 id="pair-demo-title">Can One Pair Match Two Frequencies?</h3>
+          <p class="pair-demo-intro">
+            Each curve shows a coordinate of a rotating state. Solid curves are
+            targets, and dashed curves are linear readouts. With one pair, both
+            readouts share a frequency. All curves start at the same value and
+            use the same decay. Try Match A, then Match B.
+          </p>
+          <div class="pair-demo-controls" hidden>
+            <div class="pair-demo-modes" role="group" aria-label="Number of oscillatory pairs">
+              <button type="button" data-pair-mode="one" aria-pressed="true">
+                One pair
+              </button>
+              <button type="button" data-pair-mode="two" aria-pressed="false">
+                Two independent pairs
+              </button>
+            </div>
+            <div class="pair-demo-speed-controls">
+              <div class="pair-demo-speed-label">
+                <label for="pair-demo-speed">Shared rotation speed</label>
+                <output id="pair-demo-speed-value" for="pair-demo-speed">20° / step</output>
+              </div>
+              <input id="pair-demo-speed" type="range" min="5" max="65" step="1"
+                value="20" aria-label="Shared rotation speed in degrees per step">
+              <div class="pair-demo-presets">
+                <button type="button" data-match-angle="20">Match A</button>
+                <button type="button" data-match-angle="50">Match B</button>
+              </div>
+            </div>
+          </div>
+          <div class="pair-demo-legend" aria-label="Curve legend">
+            <span><i class="pair-demo-swatch" aria-hidden="true"></i>Target A</span>
+            <span><i class="pair-demo-swatch pair-demo-swatch-b" aria-hidden="true"></i>Target B</span>
+            <span>
+              <i class="pair-demo-swatch pair-demo-swatch-readout" aria-hidden="true"></i>
+              <span id="pair-demo-readout-label">One-pair readouts</span>
+            </span>
+          </div>
+          <div class="pair-demo-plots">
+            <div class="pair-demo-plot" data-signal="A"
+              data-target-angle="20" data-matching="true">
+              <div class="pair-demo-plot-heading">
+                <h4>Target A · 20° / step</h4>
+                <span class="pair-demo-match">Matches</span>
+              </div>
+              <svg viewBox="0 0 360 176" role="img"
+                aria-labelledby="pair-demo-a-title pair-demo-a-description">
+                <title id="pair-demo-a-title">Target A and its oscillatory readout</title>
+                <desc id="pair-demo-a-description">
+                  Target A rotates 20 degrees per step. The readout rotates
+                  20 degrees per step. The two curves match.
+                </desc>
+                <path class="pair-demo-axis" d="M30 18V136H348"/>
+                <path class="pair-demo-axis pair-demo-zero" d="M30 76H348"/>
+                <g text-anchor="end">
+                  <text x="22" y="32">1</text>
+                  <text x="22" y="80">0</text>
+                  <text x="22" y="128">−1</text>
+                </g>
+                <g text-anchor="middle">
+                  <text x="30" y="151">0</text>
+                  <text x="136" y="151">8</text>
+                  <text x="242" y="151">16</text>
+                  <text x="348" y="151">24</text>
+                  <text x="189" y="170">Step</text>
+                </g>
+                <path class="pair-demo-target"
+                  d="M30.00 28.00 L33.31 28.42 L36.63 29.20 L39.94 30.33
+                    L43.25 31.80 L46.56 33.58 L49.88 35.67 L53.19 38.05
+                    L56.50 40.69 L59.81 43.57 L63.13 46.67 L66.44 49.96
+                    L69.75 53.41 L73.06 57.00 L76.38 60.70 L79.69 64.48
+                    L83.00 68.31 L86.31 72.16 L89.63 76.00 L92.94 79.80
+                    L96.25 83.53 L99.56 87.17 L102.88 90.69 L106.19 94.06
+                    L109.50 97.26 L112.81 100.27 L116.13 103.06 L119.44 105.61
+                    L122.75 107.92 L126.06 109.96 L129.38 111.72 L132.69 113.20
+                    L136.00 114.37 L139.31 115.25 L142.63 115.81 L145.94 116.07
+                    L149.25 116.02 L152.56 115.67 L155.88 115.02 L159.19 114.07
+                    L162.50 112.85 L165.81 111.37 L169.13 109.62 L172.44 107.64
+                    L175.75 105.44 L179.06 103.04 L182.38 100.46 L185.69 97.71
+                    L189.00 94.83 L192.31 91.84 L195.63 88.75 L198.94 85.60
+                    L202.25 82.41 L205.56 79.20 L208.88 76.00 L212.19 72.83
+                    L215.50 69.72 L218.81 66.68 L222.13 63.75 L225.44 60.94
+                    L228.75 58.27 L232.06 55.77 L235.38 53.44 L238.69 51.31
+                    L242.00 49.39 L245.31 47.68 L248.63 46.21 L251.94 44.99
+                    L255.25 44.01 L258.56 43.28 L261.88 42.81 L265.19 42.59
+                    L268.50 42.63 L271.81 42.93 L275.13 43.47 L278.44 44.26
+                    L281.75 45.27 L285.06 46.51 L288.38 47.97 L291.69 49.62
+                    L295.00 51.45 L298.31 53.45 L301.63 55.61 L304.94 57.90
+                    L308.25 60.30 L311.56 62.79 L314.88 65.37 L318.19 67.99
+                    L321.50 70.66 L324.81 73.33 L328.13 76.00 L331.44 78.64
+                    L334.75 81.24 L338.06 83.77 L341.38 86.21 L344.69 88.55
+                    L348.00 90.78"/>
+                <path class="pair-demo-readout"
+                  d="M30.00 28.00 L33.31 28.42 L36.63 29.20 L39.94 30.33
+                    L43.25 31.80 L46.56 33.58 L49.88 35.67 L53.19 38.05
+                    L56.50 40.69 L59.81 43.57 L63.13 46.67 L66.44 49.96
+                    L69.75 53.41 L73.06 57.00 L76.38 60.70 L79.69 64.48
+                    L83.00 68.31 L86.31 72.16 L89.63 76.00 L92.94 79.80
+                    L96.25 83.53 L99.56 87.17 L102.88 90.69 L106.19 94.06
+                    L109.50 97.26 L112.81 100.27 L116.13 103.06 L119.44 105.61
+                    L122.75 107.92 L126.06 109.96 L129.38 111.72 L132.69 113.20
+                    L136.00 114.37 L139.31 115.25 L142.63 115.81 L145.94 116.07
+                    L149.25 116.02 L152.56 115.67 L155.88 115.02 L159.19 114.07
+                    L162.50 112.85 L165.81 111.37 L169.13 109.62 L172.44 107.64
+                    L175.75 105.44 L179.06 103.04 L182.38 100.46 L185.69 97.71
+                    L189.00 94.83 L192.31 91.84 L195.63 88.75 L198.94 85.60
+                    L202.25 82.41 L205.56 79.20 L208.88 76.00 L212.19 72.83
+                    L215.50 69.72 L218.81 66.68 L222.13 63.75 L225.44 60.94
+                    L228.75 58.27 L232.06 55.77 L235.38 53.44 L238.69 51.31
+                    L242.00 49.39 L245.31 47.68 L248.63 46.21 L251.94 44.99
+                    L255.25 44.01 L258.56 43.28 L261.88 42.81 L265.19 42.59
+                    L268.50 42.63 L271.81 42.93 L275.13 43.47 L278.44 44.26
+                    L281.75 45.27 L285.06 46.51 L288.38 47.97 L291.69 49.62
+                    L295.00 51.45 L298.31 53.45 L301.63 55.61 L304.94 57.90
+                    L308.25 60.30 L311.56 62.79 L314.88 65.37 L318.19 67.99
+                    L321.50 70.66 L324.81 73.33 L328.13 76.00 L331.44 78.64
+                    L334.75 81.24 L338.06 83.77 L341.38 86.21 L344.69 88.55
+                    L348.00 90.78"/>
+              </svg>
+            </div>
+            <div class="pair-demo-plot" data-signal="B"
+              data-target-angle="50" data-matching="false">
+              <div class="pair-demo-plot-heading">
+                <h4>Target B · 50° / step</h4>
+                <span class="pair-demo-match">Different frequency</span>
+              </div>
+              <svg viewBox="0 0 360 176" role="img"
+                aria-labelledby="pair-demo-b-title pair-demo-b-description">
+                <title id="pair-demo-b-title">Target B and its oscillatory readout</title>
+                <desc id="pair-demo-b-description">
+                  Target B rotates 50 degrees per step. The readout rotates
+                  20 degrees per step. The readout has a different frequency.
+                </desc>
+                <path class="pair-demo-axis" d="M30 18V136H348"/>
+                <path class="pair-demo-axis pair-demo-zero" d="M30 76H348"/>
+                <g text-anchor="end">
+                  <text x="22" y="32">1</text>
+                  <text x="22" y="80">0</text>
+                  <text x="22" y="128">−1</text>
+                </g>
+                <g text-anchor="middle">
+                  <text x="30" y="151">0</text>
+                  <text x="136" y="151">8</text>
+                  <text x="242" y="151">16</text>
+                  <text x="348" y="151">24</text>
+                  <text x="189" y="170">Step</text>
+                </g>
+                <path class="pair-demo-target"
+                  d="M30.00 28.00 L33.31 29.37 L36.63 32.93 L39.94 38.49
+                    L43.25 45.76 L46.56 54.39 L49.88 63.95 L53.19 73.98
+                    L56.50 84.01 L59.81 93.55 L63.13 102.18 L66.44 109.48
+                    L69.75 115.12 L73.06 118.87 L76.38 120.55 L79.69 120.12
+                    L83.00 117.60 L86.31 113.15 L89.63 106.99 L92.94 99.43
+                    L96.25 90.84 L99.56 81.63 L102.88 72.26 L106.19 63.15
+                    L109.50 54.74 L112.81 47.42 L116.13 41.52 L119.44 37.31
+                    L122.75 34.96 L126.06 34.58 L129.38 36.15 L132.69 39.59
+                    L136.00 44.72 L139.31 51.27 L142.63 58.92 L145.94 67.29
+                    L149.25 76.00 L152.56 84.62 L155.88 92.74 L159.19 100.00
+                    L162.50 106.04 L165.81 110.61 L169.13 113.50 L172.44 114.59
+                    L175.75 113.85 L179.06 111.33 L182.38 107.17 L185.69 101.58
+                    L189.00 94.83 L192.31 87.27 L195.63 79.25 L198.94 71.16
+                    L202.25 63.37 L205.56 56.27 L208.88 50.16 L212.19 45.34
+                    L215.50 42.01 L218.81 40.32 L222.13 40.33 L225.44 42.02
+                    L228.75 45.30 L232.06 49.99 L235.38 55.87 L238.69 62.64
+                    L242.00 69.97 L245.31 77.51 L248.63 84.90 L251.94 91.80
+                    L255.25 97.89 L258.56 102.88 L261.88 106.55 L265.19 108.74
+                    L268.50 109.37 L271.81 108.41 L275.13 105.94 L278.44 102.07
+                    L281.75 97.02 L285.06 91.02 L288.38 84.38 L291.69 77.40
+                    L295.00 70.44 L298.31 63.80 L301.63 57.80 L304.94 52.73
+                    L308.25 48.80 L311.56 46.20 L314.88 45.03 L318.19 45.33
+                    L321.50 47.08 L324.81 50.17 L328.13 54.46 L331.44 59.71
+                    L334.75 65.68 L338.06 72.08 L341.38 78.60 L344.69 84.93
+                    L348.00 90.78"/>
+                <path class="pair-demo-readout"
+                  d="M30.00 28.00 L33.31 28.42 L36.63 29.20 L39.94 30.33
+                    L43.25 31.80 L46.56 33.58 L49.88 35.67 L53.19 38.05
+                    L56.50 40.69 L59.81 43.57 L63.13 46.67 L66.44 49.96
+                    L69.75 53.41 L73.06 57.00 L76.38 60.70 L79.69 64.48
+                    L83.00 68.31 L86.31 72.16 L89.63 76.00 L92.94 79.80
+                    L96.25 83.53 L99.56 87.17 L102.88 90.69 L106.19 94.06
+                    L109.50 97.26 L112.81 100.27 L116.13 103.06 L119.44 105.61
+                    L122.75 107.92 L126.06 109.96 L129.38 111.72 L132.69 113.20
+                    L136.00 114.37 L139.31 115.25 L142.63 115.81 L145.94 116.07
+                    L149.25 116.02 L152.56 115.67 L155.88 115.02 L159.19 114.07
+                    L162.50 112.85 L165.81 111.37 L169.13 109.62 L172.44 107.64
+                    L175.75 105.44 L179.06 103.04 L182.38 100.46 L185.69 97.71
+                    L189.00 94.83 L192.31 91.84 L195.63 88.75 L198.94 85.60
+                    L202.25 82.41 L205.56 79.20 L208.88 76.00 L212.19 72.83
+                    L215.50 69.72 L218.81 66.68 L222.13 63.75 L225.44 60.94
+                    L228.75 58.27 L232.06 55.77 L235.38 53.44 L238.69 51.31
+                    L242.00 49.39 L245.31 47.68 L248.63 46.21 L251.94 44.99
+                    L255.25 44.01 L258.56 43.28 L261.88 42.81 L265.19 42.59
+                    L268.50 42.63 L271.81 42.93 L275.13 43.47 L278.44 44.26
+                    L281.75 45.27 L285.06 46.51 L288.38 47.97 L291.69 49.62
+                    L295.00 51.45 L298.31 53.45 L301.63 55.61 L304.94 57.90
+                    L308.25 60.30 L311.56 62.79 L314.88 65.37 L318.19 67.99
+                    L321.50 70.66 L324.81 73.33 L328.13 76.00 L331.44 78.64
+                    L334.75 81.24 L338.06 83.77 L341.38 86.21 L344.69 88.55
+                    L348.00 90.78"/>
+              </svg>
+            </div>
+          </div>
+          <p class="pair-demo-status" id="pair-demo-status" role="status">
+            A matches. B needs a different frequency.
+          </p>
+          <noscript>
+            <p class="pair-demo-intro">
+              Enable JavaScript to change the shared speed or compare one pair
+              with two independent pairs.
+            </p>
+          </noscript>
+          <figcaption id="pair-demo-caption">
+            Linear readouts of fixed oscillatory states. No new writes.
+          </figcaption>
+        </figure>
+        <p class="text">
+          The targets correspond to two independent state pairs, with
+          \(\phi_A=20^\circ\), \(\phi_B=50^\circ\), and \(\rho=0.98\):
+        </p>
+        <div class="equation">
+          \[T_\star=\rho R(\phi_A)\oplus\rho R(\phi_B).\]
+        </div>
+        <p class="text">
+          Here \(\oplus\) places the two rotations in separate blocks. Each
+          contributes a distinct non-real conjugate pair. Within one head and
+          state column, the fixed CKDA and MDN transitions above have at most one
+          pair. Therefore <strong>they cannot exactly maintain both independent
+          rotations with a fixed linear state encoding.</strong>
+        </p>
+        <p class="text">
+          Changing coordinates preserves eigenvalues. A wider state must also
+          contain both target pairs to reproduce these rotations. To see why,
+          suppose \(s=Ez\) encodes the target state \(z\)
+          without losing information. Exact one-step updates require
+        </p>
+        <div class="equation">
+          \[\mathsf T E=ET_\star.\]
+        </div>
+        <p class="text">
+          If \(T_\star v=\lambda v\), then \(\mathsf T(Ev)=\lambda(Ev)\), with
+          \(Ev\ne0\). Every target eigenvalue must therefore also appear in the
+          model transition. A wider state with only one oscillatory pair still
+          cannot reproduce both target frequencies exactly.
+        </p>
+        <p class="text">
+          This bound concerns one fixed transition. Multiple heads or compositions
+          of different transitions can combine more frequencies.
+          <a href="#transport">CyFA</a>, which we consider next, supports several
+          oscillatory pairs within a single transition, with related frequencies.
+        </p>
+      </section>
+
+      <section class="container blog main" id="transport">
+        <h2>From Rotation to Memory Transport</h2>
+        <p class="text">
+          CyFA (<a class="paper-citation" data-reference="ref-cyfa"
+            href="https://arxiv.org/abs/2609.36259">Chen et al., 2026</a>) moves information
+          through memory slots using cyclic shifts. Each head maintains separate
+          key and value states over \(m\)
+          relative-time slots:
+        </p>
+        <div class="equation">
+          \[\begin{aligned}K_t&amp;=\alpha_tP(\delta_t)K_{t-1}+\beta_te_0k_t^\top,\\V_t&amp;=\alpha_tP(\delta_t)V_{t-1}+\beta_te_0v_t^\top.\end{aligned}\]
+        </div>
+        <p class="text">
+          Here, \(K_t\in\mathbb R^{m\times d_k}\), \(V_t\in\mathbb R^{m\times d_v}\),
+          and \(e_0\) selects the first slot. The clock increment \(\delta_t\in(0,1)\)
+          controls a fractional cyclic shift \(P(\delta_t)\). The gate \(\alpha_t\) controls
+          decay and \(\beta_t\) controls writing, with both gates in \((0,1)\). This
+          shift operator is different from the key projector used earlier. Existing
+          information moves before the new key and value are written into slot zero.
+        </p>
+        <h3>Transport in slot space, oscillation in Fourier space</h3>
+        <p class="text">
+          For an odd number of slots \(m=2p+1\), an orthogonal real Fourier basis
+          \(\Phi\) decomposes the shift into a constant mode and \(p\) cosine–sine
+          pairs:
+        </p>
+        <div class="equation">
+          \[P(\delta)=\Phi\mathcal R(\delta)\Phi^\top,\quad\mathcal R(\delta)=1\oplus\bigoplus_{j=1}^{p}R(\omega_j\delta),\quad\omega_j=\frac{2\pi j}{m}.\]
+        </div>
+        <p class="text">
+          In Fourier coordinates, cyclic transport rotates each cosine–sine pair.
+          With no new writes, each pair follows
+          \(z_{t,j}=\alpha_tR(\omega_j\delta_t)z_{t-1,j}\), with eigenvalues
+        </p>
+        <div class="equation">
+          \[\lambda_{t,j,\pm}=\alpha_t e^{\pm i\omega_j\delta_t}.\]
+        </div>
+        <p class="text">
+          Because \(0&lt;\omega_j\delta_t&lt;\pi\), all \(p=(m-1)/2\) pairs are
+          non-real. Each gives a local damped oscillator after setting
+          \(a_t=-\log\alpha_t/\Delta_t\) and \(\nu_{t,j}=\omega_j\delta_t/\Delta_t\).
+          The constant mode only decays.
+        </p>
+        <p class="text">
+          Compare the same memory state with and without shifting. In slot
+          coordinates, a shift moves its signed coefficients between slots. In
+          Fourier coordinates, it rotates each cosine–sine pair. The two rows
+          below show the same states in different coordinates.
+        </p>
+        <figure class="transport-demo" id="transport-demo"
+          aria-labelledby="transport-demo-title" aria-describedby="transport-demo-caption">
+          <div class="transport-demo-heading">
+            <h3 id="transport-demo-title">One State, Two Coordinate Systems</h3>
+            <span class="transport-demo-norm">
+              State norm · <span id="transport-demo-norm">1.00</span> in both
+            </span>
+          </div>
+          <p class="transport-demo-intro">
+            Start with one write in slot 0. Top: slot values. Bottom: Fourier
+            pairs. Both columns retain 95% of the state per step. Only the right
+            column shifts.
+          </p>
+          <div class="transport-demo-controls" hidden>
+            <div class="transport-demo-actions">
+              <button type="button" id="transport-demo-play">Play</button>
+              <button type="button" id="transport-demo-reset">Reset</button>
+            </div>
+            <div class="transport-demo-sliders">
+              <div>
+                <label for="transport-demo-step">
+                  Step <output id="transport-demo-step-value" for="transport-demo-step">0.0</output>
+                </label>
+                <input id="transport-demo-step" type="range" min="0" max="10"
+                  step="0.1" value="0" aria-label="Evolution step"/>
+              </div>
+              <div>
+                <label for="transport-demo-shift">
+                  Shift <output id="transport-demo-shift-value" for="transport-demo-shift">0.50 slots / step</output>
+                </label>
+                <input id="transport-demo-shift" type="range" min="0.1" max="0.9"
+                  step="0.05" value="0.5" aria-label="Cyclic shift per step"/>
+              </div>
+            </div>
+            <p class="sr-only" id="transport-demo-status" role="status"></p>
+          </div>
+          <div class="transport-demo-grid">
+            <div class="transport-demo-panel" data-slot-condition="still">
+              <h4>Slots: decay</h4>
+              <svg viewBox="0 0 300 190" role="img"
+                aria-labelledby="transport-still-slots-title transport-still-slots-description">
+                <title id="transport-still-slots-title">Slots: decay</title>
+                <desc id="transport-still-slots-description">
+                  At step 0, only slot zero contains the initial write.
+                </desc>
+                <path class="transport-demo-axis" d="M30 30H280M30 154H280"/>
+                <rect class="transport-demo-guide" x="46" y="30.000" width="28" height="62.000"/>
+                <path class="transport-demo-axis transport-demo-zero" d="M30 92H280"/>
+                <rect class="transport-demo-bar" data-slot="0" data-value="1.000000"
+                  x="46" y="30.000" width="28" height="62.000"/>
+                <rect class="transport-demo-bar" data-slot="1" data-value="0.000000"
+                  x="96" y="92.000" width="28" height="0.000"/>
+                <rect class="transport-demo-bar" data-slot="2" data-value="0.000000"
+                  x="146" y="92.000" width="28" height="0.000"/>
+                <rect class="transport-demo-bar" data-slot="3" data-value="0.000000"
+                  x="196" y="92.000" width="28" height="0.000"/>
+                <rect class="transport-demo-bar" data-slot="4" data-value="0.000000"
+                  x="246" y="92.000" width="28" height="0.000"/>
+                <g text-anchor="end">
+                  <text x="22" y="34">1</text>
+                  <text x="22" y="96">0</text>
+                  <text x="22" y="158">−1</text>
+                </g>
+                <g text-anchor="middle">
+                  <text x="60" y="172">0</text>
+                  <text x="110" y="172">1</text>
+                  <text x="160" y="172">2</text>
+                  <text x="210" y="172">3</text>
+                  <text x="260" y="172">4</text>
+                  <text x="155" y="189">Slot</text>
+                </g>
+              </svg>
+            </div>
+            <div class="transport-demo-panel" data-slot-condition="shifted">
+              <h4>Slots: decay + shift</h4>
+              <svg viewBox="0 0 300 190" role="img"
+                aria-labelledby="transport-shifted-slots-title transport-shifted-slots-description">
+                <title id="transport-shifted-slots-title">Slots: decay + shift</title>
+                <desc id="transport-shifted-slots-description">
+                  At step 0, only slot zero contains the initial write.
+                </desc>
+                <path class="transport-demo-axis" d="M30 30H280M30 154H280"/>
+                <rect class="transport-demo-guide" x="46" y="30.000" width="28" height="62.000"/>
+                <path class="transport-demo-axis transport-demo-zero" d="M30 92H280"/>
+                <rect class="transport-demo-bar" data-slot="0" data-value="1.000000"
+                  x="46" y="30.000" width="28" height="62.000"/>
+                <rect class="transport-demo-bar" data-slot="1" data-value="0.000000"
+                  x="96" y="92.000" width="28" height="0.000"/>
+                <rect class="transport-demo-bar" data-slot="2" data-value="0.000000"
+                  x="146" y="92.000" width="28" height="0.000"/>
+                <rect class="transport-demo-bar" data-slot="3" data-value="0.000000"
+                  x="196" y="92.000" width="28" height="0.000"/>
+                <rect class="transport-demo-bar" data-slot="4" data-value="0.000000"
+                  x="246" y="92.000" width="28" height="0.000"/>
+                <g text-anchor="end">
+                  <text x="22" y="34">1</text>
+                  <text x="22" y="96">0</text>
+                  <text x="22" y="158">−1</text>
+                </g>
+                <g text-anchor="middle">
+                  <text x="60" y="172">0</text>
+                  <text x="110" y="172">1</text>
+                  <text x="160" y="172">2</text>
+                  <text x="210" y="172">3</text>
+                  <text x="260" y="172">4</text>
+                  <text x="155" y="189">Slot</text>
+                </g>
+              </svg>
+            </div>
+            <div class="transport-demo-panel" data-fourier-condition="still">
+              <h4>Fourier: decay</h4>
+              <svg viewBox="0 0 300 215" role="img"
+                aria-labelledby="transport-still-fourier-title transport-still-fourier-description">
+                <title id="transport-still-fourier-title">Fourier: decay</title>
+                <desc id="transport-still-fourier-description">
+                  Both Fourier pairs have their initial length and direction.
+                  Neither pair rotates.
+                </desc>
+                <circle class="transport-demo-guide" cx="150" cy="105" r="72"/>
+                <path class="transport-demo-axis" d="M60 105H240M150 15V195"/>
+                <text x="246" y="109">cos</text>
+                <text x="156" y="18">sin</text>
+                <g class="transport-demo-mode transport-demo-mode-1" data-fourier-mode="1"
+                  data-cosine="0.632456"
+                  data-sine="0.000000"
+                  data-phase="0.000000">
+                  <path class="transport-demo-trail"
+                    d="M222.000 105.000 L222.000 105.000"/>
+                  <line class="transport-demo-vector" x1="150" y1="105"
+                    x2="222.000" y2="105.000"/>
+                  <circle class="transport-demo-endpoint" r="3.5"
+                    cx="222.000" cy="105.000"/>
+                </g>
+                <g class="transport-demo-mode transport-demo-mode-2" data-fourier-mode="2"
+                  data-cosine="0.632456"
+                  data-sine="0.000000"
+                  data-phase="0.000000">
+                  <path class="transport-demo-trail"
+                    d="M222.000 105.000 L222.000 105.000"/>
+                  <line class="transport-demo-vector" x1="150" y1="105"
+                    x2="222.000" y2="105.000"/>
+                  <circle class="transport-demo-endpoint" r="5.5"
+                    cx="222.000" cy="105.000"/>
+                </g>
+                <circle class="transport-demo-origin" cx="150" cy="105" r="2"/>
+              </svg>
+            </div>
+            <div class="transport-demo-panel" data-fourier-condition="shifted">
+              <h4>Fourier: decay + rotation</h4>
+              <svg viewBox="0 0 300 215" role="img"
+                aria-labelledby="transport-shifted-fourier-title transport-shifted-fourier-description">
+                <title id="transport-shifted-fourier-title">Fourier: decay + rotation</title>
+                <desc id="transport-shifted-fourier-description">
+                  Both Fourier pairs have their initial length and direction.
+                  Neither pair has rotated yet.
+                </desc>
+                <circle class="transport-demo-guide" cx="150" cy="105" r="72"/>
+                <path class="transport-demo-axis" d="M60 105H240M150 15V195"/>
+                <text x="246" y="109">cos</text>
+                <text x="156" y="18">sin</text>
+                <g class="transport-demo-mode transport-demo-mode-1" data-fourier-mode="1"
+                  data-cosine="0.632456"
+                  data-sine="0.000000"
+                  data-phase="0.000000">
+                  <path class="transport-demo-trail"
+                    d="M222.000 105.000 L222.000 105.000"/>
+                  <line class="transport-demo-vector" x1="150" y1="105"
+                    x2="222.000" y2="105.000"/>
+                  <circle class="transport-demo-endpoint" r="3.5"
+                    cx="222.000" cy="105.000"/>
+                </g>
+                <g class="transport-demo-mode transport-demo-mode-2" data-fourier-mode="2"
+                  data-cosine="0.632456"
+                  data-sine="0.000000"
+                  data-phase="0.000000">
+                  <path class="transport-demo-trail"
+                    d="M222.000 105.000 L222.000 105.000"/>
+                  <line class="transport-demo-vector" x1="150" y1="105"
+                    x2="222.000" y2="105.000"/>
+                  <circle class="transport-demo-endpoint" r="5.5"
+                    cx="222.000" cy="105.000"/>
+                </g>
+                <circle class="transport-demo-origin" cx="150" cy="105" r="2"/>
+              </svg>
+            </div>
+          </div>
+          <div class="transport-demo-legend">
+            <span><i class="transport-demo-swatch" aria-hidden="true"></i>Pair 1</span>
+            <span><i class="transport-demo-swatch transport-demo-swatch-2" aria-hidden="true"></i>Pair 2</span>
+            <span>Constant mode: <span id="transport-demo-dc">0.45</span> in both</span>
+          </div>
+          <noscript>
+            <p class="transport-demo-intro">
+              Enable JavaScript to play or change the step and shift.
+            </p>
+          </noscript>
+          <figcaption id="transport-demo-caption">
+            Both pairs decay equally. With shifting, Pair 2 rotates twice as fast.
+          </figcaption>
+        </figure>
+        <h3>Many modes, coupled controls</h3>
+        <p class="text">
+          CyFA has multiple oscillatory pairs, but it cannot set their frequencies
+          independently. Their phase increments obey
+        </p>
+        <div class="equation">
+          \[\theta_{t,j}=\frac{2\pi j}{m}\delta_t=j\theta_{t,1}.\]
+        </div>
+        <p class="text">
+          All modes share one learned clock increment and one decay coefficient. The
+          Fourier subspaces and frequency ratios are fixed by the transport structure.
+          At \(m=5\), for example, the second pair rotates through twice the angle
+          of the first. The two pairs therefore cannot use angles \(\pi/10\) and
+          \(\pi/3\) in the same update.
+        </p>
+        <p class="text">
+          <strong>CyFA's oscillators have fixed frequency ratios, and their number
+          is set by the slot count \(m\).</strong> For odd \(m\), each state
+          column has \((m-1)/2\) oscillatory pairs. Increasing \(m\) adds more
+          pairs whose frequencies remain tied to the same learned clock.
+        </p>
+        <details>
+          <summary>How transported states are written and read</summary>
+          <p>
+            Let \(W\in\mathbb R^{m\times m}\) be the learned readout matrix, using a
+            different symbol from the rotation \(R\). Omitting dot-product scaling, CyFA
+            reads
+          </p>
+          <div class="equation">
+            \[\pi_t=\operatorname{softmax}(WK_tq_t),\quad o_t=(WV_t)^\top\pi_t.\]
+          </div>
+          <p>
+            The matrix \(W\) can mix Fourier modes at readout without changing the
+            homogeneous transition. Starting with zero states, define the cumulative
+            clock \(\ell_t=\sum_{r=1}^t\delta_r\), a retained write weight
+            \(\gamma_{t,i}=\beta_i\prod_{r=i+1}^t\alpha_r\), and a relative-time
+            coefficient vector \(c_{t,i}=P(\ell_t-\ell_i)e_0\). Unrolling the
+            recurrences gives
+          </p>
+          <div class="equation">
+            \[K_t=\sum_{i=1}^t\gamma_{t,i}c_{t,i}k_i^\top,\quad V_t=\sum_{i=1}^t\gamma_{t,i}c_{t,i}v_i^\top.\]
+          </div>
+          <p>
+            The effective coefficient on a historical value is
+            \(\gamma_{t,i}(\pi_t^\top Wc_{t,i})\). It depends on elapsed learned time,
+            decay, and the full set of query–key matches through the softmax. Fractional
+            shifts are orthogonal but need not be entrywise nonnegative, so \(c_{t,i}\)
+            is a signed coefficient vector, not a probability distribution.
+          </p>
+          <p>
+            A moving coordinate system can transfer rotation from the recurrence into
+            the writes and readout. Define
+            \(\overline K_t=\mathcal R(-\ell_t)\Phi^\top K_t\), and similarly for
+            \(\overline V_t\). With \(b=\Phi^\top e_0\) and
+            \(u_t=\mathcal R(-\ell_t)b\), the updates become
+          </p>
+          <div class="equation">
+            \[\begin{aligned}\overline K_t&amp;=\alpha_t\overline K_{t-1}+\beta_tu_tk_t^\top,\\\overline V_t&amp;=\alpha_t\overline V_{t-1}+\beta_tu_tv_t^\top.\end{aligned}\]
+          </div>
+          <p>
+            The original states are recovered as
+            \(K_t=\Phi\mathcal R(\ell_t)\overline K_t\) and likewise for \(V_t\) before
+            readout. This is a time-dependent coordinate transformation, so it does not
+            contradict the non-real spectrum in fixed Fourier coordinates. The same
+            model can thus place rotation in the state update or in the writes and
+            readout, depending on the coordinates.
+          </p>
+        </details>
+        <aside class="finding dynamics-summary" data-model="CyFA">
+          <p>
+            <strong>CyFA: many oscillatory pairs with shared controls.</strong>
+            With \(m=2p+1\) active slots, each state column has \(p=(m-1)/2\)
+            Fourier pairs. All share one decay factor and one learned clock, with
+            harmonically related frequencies.
+          </p>
+        </aside>
+      </section>
+
+      <section class="container blog main" id="design">
+        <h2>Dynamics as a Design Dimension</h2>
+        <p class="text">
+          Beyond asking whether a model oscillates, we can ask how many oscillatory
+          modes it supports, which controls they share, whether their subspaces
+          change with the input, and how the model writes and reads in those
+          coordinates.
+        </p>
+        <div class="table-wrapper dynamics-comparison" role="region" tabindex="0"
+          aria-label="Dynamical design questions and examples">
+          <table>
+            <caption>
+              Designing how memory evolves.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">
+                  Design question
+                </th>
+                <th scope="col">
+                  Examples in this post
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">
+                  Which directions forget?
+                </th>
+                <td>
+                  DeltaNet selects the current key direction. Gated DeltaNet adds shared
+                  decay.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  How many retention timescales?
+                </th>
+                <td>
+                  KDA uses coordinate-wise gates and allows different decay rates in
+                  transformed coordinates.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  Can a step advance phase?
+                </th>
+                <td>
+                  Mamba-3 uses rotary pairs, CKDA composes reflections, and MDN couples
+                  state and momentum.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  How many non-real pairs per column?
+                </th>
+                <td>
+                  At most one for CKDA and the scalar-gated MDN analyzed here.
+                  CyFA’s active slot transition has \((m-1)/2\).
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  Which modes can be controlled independently?
+                </th>
+                <td>
+                  CyFA’s harmonics share a learned clock and a common decay rate.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  Can the mode subspaces change?
+                </th>
+                <td>
+                  CKDA and MDN can change their local modes with the input. CyFA uses
+                  fixed Fourier subspaces.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  How does phase organize memory?
+                </th>
+                <td>
+                  CyFA’s learned clock controls transport across slots and the
+                  relative-time coefficients used at readout.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text">
+          Writing, readout, input dependence, multiple heads, and composition across
+          layers also shape what a complete model can compute. Studying state
+          dynamics lets us examine one part of that design in detail.
+        </p>
+        <p class="text">
+          These questions suggest experiments. Does a task benefit from more
+          oscillatory modes? Should each pair have its own phase and decay controls,
+          or should modes share a clock? Does allowing their subspaces to change
+          with the input help? How much memory and computation do these choices
+          require, and can the updates still be trained efficiently in parallel?
+        </p>
+        <p class="text closing-thought">
+          <strong>Back to dynamics.</strong> We do not claim that oscillatory
+          dynamics are always better. We hope to treat state dynamics as one
+          dimension of model design, looking beyond memory decay and erasure.
+        </p>
+        <p class="text">
+          <strong>Memory has a lifetime, but it also has a trajectory.</strong>
+        </p>
+      </section>
+
+      <section class="container blog main resources" id="references">
+        <h2>References</h2>
+        <ul class="references" role="list">
+          <li id="ref-longbench">
+            Yushi Bai, Xin Lv, Jiajie Zhang, Hongchang Lyu, Jiankai Tang, Zhidian Huang,
+            Zhengxiao Du, Xiao Liu, Aohan Zeng, Lei Hou, Yuxiao Dong, Jie Tang, and
+            Juanzi Li (2024). <a href="https://aclanthology.org/2024.acl-long.172/">LongBench: A Bilingual, Multitask Benchmark for Long
+            Context Understanding</a>. ACL.
+          </li>
+          <li id="ref-dlinoss">
+            Jared Boyer, T. Konstantin Rusch, and Daniela Rus (2025). <a href="https://arxiv.org/abs/2505.12171">Learning to
+            Dissipate Energy in Oscillatory State-Space Models</a>. arXiv:2505.12171.
+          </li>
+          <li id="ref-cyfa">
+            Yixiao Chen, Shuojin Yang, and Shi-Min Hu (2026). <a href="https://arxiv.org/abs/2609.36259">CyFA: Linear Sequence
+            Modeling with Relative-Time-Partitioned Memory</a>. arXiv:2609.36259.
+          </li>
+          <li id="ref-mamba2">
+            Tri Dao and Albert Gu (2024). <a href="https://arxiv.org/abs/2405.21060">Transformers are SSMs: Generalized Models
+            and Efficient Algorithms Through Structured State Space Duality</a>. ICML.
+          </li>
+          <li id="ref-mamba">
+            Albert Gu and Tri Dao (2024). <a href="https://arxiv.org/abs/2312.00752">Mamba: Linear-Time Sequence Modeling with
+            Selective State Spaces</a>. COLM.
+          </li>
+          <li id="ref-mdn">
+            Yulong Huang, Xiang Liu, Hongxiang Huang, Xiaopeng Lin, Zunchang Liu,
+            Xiaowen Chu, Zeke Xie, and Bojun Cheng (2026). <a href="https://arxiv.org/abs/2605.05838">MDN: Parallelizing
+            Stepwise Momentum for Delta Linear Attention</a>. arXiv:2605.05838.
+          </li>
+          <li id="ref-kimi-linear">
+            Kimi Team (2025). <a href="https://arxiv.org/abs/2510.26692">Kimi Linear: An Expressive, Efficient Attention
+            Architecture</a>. arXiv:2510.26692.
+          </li>
+          <li id="ref-mamba3">
+            Aakash Lahoti, Kevin Y. Li, Berlin Chen, Caitlin Wang, Aviv Bick, J. Zico
+            Kolter, Tri Dao, and Albert Gu (2026). <a href="https://arxiv.org/abs/2603.15569">Mamba-3: Improved Sequence
+            Modeling using State Space Principles</a>. ICLR.
+          </li>
+          <li id="ref-understanding-mamba3">
+            Shutian Liang and Yue Song (2026). <a href="assets/papers/understanding-mamba3.pdf">Understanding Mamba-3 Through
+            Oscillatory Dynamics</a>. Preprint. <a href="../blog/clarity-template-main/index.html">Read Part I</a>.
+          </li>
+          <li id="ref-pg19">
+            Jack W. Rae, Anna Potapenko, Siddhant M. Jayakumar, and Timothy P. Lillicrap
+            (2019). <a href="https://arxiv.org/abs/1911.05507">Compressive Transformers for Long-Range Sequence Modelling</a>.
+            arXiv:1911.05507.
+          </li>
+          <li id="ref-linoss">
+            T. Konstantin Rusch and Daniela Rus (2025). <a href="https://arxiv.org/abs/2410.03943">Oscillatory State-Space
+            Models</a>. ICLR.
+          </li>
+          <li id="ref-ckda">
+            Julien Siems, Riccardo Grazzi, Korbinian Pöppel, Jaisidh Singh, Arber Zela,
+            Timur Carstensen, Jenia Jitsev, Frank Hutter, Volkan Cevher, Antonio
+            Orvieto, and Aaron Klein (2026). <a href="https://arxiv.org/abs/2609.24797">Complex KDA: Understanding and Enhancing
+            the Expressivity of Kimi Delta Attention</a>. arXiv:2609.24797. <a href="https://huggingface.co/collections/openeurollm/complexkda">Released
+            models</a>.
+          </li>
+          <li id="ref-deltanet">
+            Songlin Yang, Bailin Wang, Yu Zhang, Yikang Shen, and Yoon Kim (2024).
+            <a href="https://arxiv.org/abs/2406.06484">Parallelizing Linear Transformers with the Delta Rule over Sequence
+            Length</a>. NeurIPS.
+          </li>
+          <li id="ref-gated-deltanet">
+            Songlin Yang, Jan Kautz, and Ali Hatamizadeh (2025). <a href="https://arxiv.org/abs/2412.06464">Gated Delta
+            Networks: Improving Mamba2 with Delta Rule</a>. ICLR.
+          </li>
+        </ul>
+      </section>
+
+      <section class="container blog main resources citation" id="citation">
+        <h2>Citation</h2>
+        <p class="text">
+          If you find this post useful, please cite it as:
+        </p>
+        <pre><code>@misc{liang2026backtodynamics,
+  title        = {{Back to Dynamics}: Designing Sequence Models Through Their State Dynamics},
+  author       = {Liang, Shutian and Song, Yue},
+  year         = {2026},
+  howpublished = {Blog post}
+}</code></pre>
+        <p class="source-note">
+          <a href="citation.bib" download>Download BibTeX (.bib)</a>
+        </p>
+      </section>
+    </main>
+    <footer class="container blog">
+      <p>
+        Built with the <a href="https://shikun.io/projects/clarity">Clarity Template</a> by <a href="https://shikun.io/">Shikun Liu</a>. Template
+        modifications are shared under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+      </p>
+    </footer>
+  </body>
+</html>
