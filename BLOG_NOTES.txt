@@ -115,6 +115,7 @@ Maintenance
   Paper citations use author-year links at the first method introduction and for
   specific attributed results. References are alphabetical by first author, with
   full author lists (or Kimi Team), year, title, and venue or preprint identifier.
+  Keep the public blog URL in both the inline BibTeX and citation.bib.
   Conference entries use the publication year; PG-19 cites the 2019 arXiv version.
   Keep each paper-citation data-reference value matched to its reference entry ID.
   The opening demo compares decay and oscillation with exp(-a t) for both state
