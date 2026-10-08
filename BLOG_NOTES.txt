@@ -72,6 +72,11 @@ Maintenance
   including zero gates. Negative gates and beta > 1 are necessary, not sufficient.
   Keep CKDA concise: one rotation example, the two necessary conditions, and
   the one-pair bound. Show short proofs directly before the final summary.
+  State the CKDA scope explicitly: fixed real transition, real diagonal D, real
+  unit key, real beta, one head, and one state column. Nonzero distinct gates
+  and nonzero key coordinates are only conveniences for the root-count proof.
+  A non-real pair implies oscillation, while damping additionally requires
+  strict modulus below one.
   Prove MDN's one-pair bound directly from its scalar-gated recurrence. Project
   onto the key and orthogonal directions, derive the triangular orthogonal
   blocks, and compute the key block's quadratic. Keep the method citation
@@ -88,12 +93,18 @@ Maintenance
   This is an illustration of fixed oscillatory states,
   not a simulation or evaluation of a trained CKDA or MDN checkpoint.
   The formal claim remains exact one-step dynamics with fixed injective linear
-  state encoding. Keep the short eigenvector proof and the multi-head / multi-step
-  scope. Static curves and explanatory text remain visible without JavaScript.
+  state encoding between fixed real transitions. It includes the entire target
+  state and does not exclude finite-horizon approximation, time-varying encodings,
+  input-dependent products, or multi-head and multi-layer composition. Keep the
+  short eigenvector proof. Static curves and explanatory text remain visible
+  without JavaScript.
   The CyFA demo keeps a two-column, two-row comparison at every screen width.
   CyFA's coupled-controls explanation focuses on fixed frequency ratios and
   the (m-1)/2 pair count for odd m. Keep this paragraph within CyFA, without
   comparison to CKDA/MDN or discussion of commutativity and overall expressivity.
+  The count applies to CyFA's Fourier fractional shift. Even slot counts include
+  a real Nyquist mode, and the homogeneous spectrum does not by itself restrict
+  every frequency in the full input-driven output.
   Top: five-slot signed states without and with fractional cyclic shift.
   Bottom: the same states' two cosine-sine Fourier pairs in an orthonormal basis.
   Initialize only slot zero with [1, 0, 0, 0, 0], with unit state norm.
@@ -110,6 +121,9 @@ Maintenance
   tabs. The animation interpolates the fixed transition between integer steps.
   Use periods or conjunctions instead of semicolons in article prose. Keep HTML
   source in multiline format, and use \quad rather than \qquad in formulas.
+  State that LinOSS uses a positive frequency omega in the prose. Keep the
+  displayed oscillator equation free of a trailing inequality so it renders
+  consistently across browsers and zoom levels.
   Prefer concrete descriptions over abstract transitions and repeated summaries.
   Keep proofs readable while preserving their assumptions and fixed-transition scope.
   Paper citations use author-year links at the first method introduction and for

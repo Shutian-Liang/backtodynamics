@@ -216,10 +216,11 @@
         <p class="text">
           LinOSS (<a class="paper-citation" data-reference="ref-linoss"
             href="https://arxiv.org/abs/2410.03943">Rusch &amp; Rus, 2025</a>) starts from driven linear oscillators.
-          For a nonzero scalar frequency, its continuous-time dynamics can be written as
+          For a positive scalar frequency \(\omega\), its continuous-time dynamics
+          can be written as
         </p>
         <div class="equation">
-          \[\ddot x+\omega^2x=Bu(\tau),\quad\omega&gt;0.\]
+          \[\ddot x+\omega^2x=Bu(\tau).\]
         </div>
         <p class="text">
           Without the forcing term, the first-order state \((x,\dot x)\) has generator
@@ -468,6 +469,11 @@
           \[T_t=(I-\beta_tk_tk_t^\top)D_t,\quad\beta_t\in[0,2],\quad\alpha_{t,i}\in[-1,1].\]
         </div>
         <p class="text">
+          We analyze one fixed transition for one head and one state column.
+          Here, \(D\) is real and diagonal, \(k\) is a real unit vector, and
+          \(\beta\) is a real scalar.
+        </p>
+        <p class="text">
           For a two-dimensional example with fixed gates and key, choose
           \(0&lt;\rho&lt;1\) and \(0&lt;\theta&lt;\pi/2\). A signed gate and
           the delta correction give
@@ -483,7 +489,9 @@
         </div>
         <p class="text">
           Its eigenvalues are \(\rho e^{\pm2i\theta}\), a non-real conjugate pair
-          that gives damped oscillation.
+          that oscillates and decays because \(\rho&lt;1\). In general, a non-real
+          pair implies oscillation, not stability. An oscillatory mode is
+          asymptotically stable only when \(|\lambda|&lt;1\).
         </p>
         <p class="text">
           The necessary conditions follow from symmetry. Write \(T=HD\), where
@@ -510,7 +518,8 @@
         <p class="text">
           To count the possible oscillatory pairs, first assume the gates are
           distinct and nonzero, ordered as \(\alpha_1&lt;\cdots&lt;\alpha_d\),
-          and that every key coordinate is nonzero. The characteristic polynomial is
+          and that every key coordinate is nonzero. These assumptions simplify
+          the root count, not the final bound. The characteristic polynomial is
         </p>
         <div class="equation">
           \[\chi_T(\lambda)=\prod_{i=1}^{d}(\lambda-\alpha_i)\left(1+\beta\sum_{i=1}^{d}\frac{\alpha_i k_i^2}{\lambda-\alpha_i}\right).\]
@@ -528,9 +537,9 @@
         <aside class="finding dynamics-summary" data-model="CKDA">
           <p>
             <strong>CKDA can support oscillation.</strong> A non-real pair requires
-            \(\beta&gt;1\) and at least one \(\alpha_i&lt;0\). Each fixed
-            transition per head and state column has <strong>at most one such
-            pair.</strong>
+            \(\beta&gt;1\) and at least one \(\alpha_i&lt;0\). The fixed real
+            transition for one head and state column has <strong>at most one such
+            pair.</strong> Damping additionally requires \(|\lambda|&lt;1\).
           </p>
         </aside>
       </section>
@@ -728,7 +737,9 @@
           <strong>CKDA performs better than KDA in these evaluations.</strong>
           It achieves lower PG-19 perplexity at every tested context length from
           2K to 64K and a higher average score on LongBench-E, with gains on 8 of
-          the 13 tasks.
+          the 13 tasks. The result is consistent with a benefit from richer
+          dynamics, but this model-level comparison does not show that non-real
+          eigenvalues cause the gains.
         </p>
       </section>
 
@@ -748,11 +759,12 @@
           \]
         </div>
         <p class="text">
-          Hold the scalar coefficients and unit key fixed, and set aside new
-          writes. Let \(s_n\) and \(m_n\) be a memory column and its momentum.
-          Their updates are \(m_{n+1}=\mu m_n+\alpha\eta Ps_n\) and
-          \(s_{n+1}=\alpha s_n-\beta m_{n+1}\), where \(P=kk^\top\) projects
-          onto the key direction.
+          We consider one head and one state column, with scalar coefficients and
+          a real unit key held fixed, and set aside new writes. The coupling
+          \(P=kk^\top\) has rank one. Let \(s_n\) and \(m_n\) denote the memory
+          column and its momentum. Their updates are
+          \(m_{n+1}=\mu m_n+\alpha\eta Ps_n\) and
+          \(s_{n+1}=\alpha s_n-\beta m_{n+1}\).
         </p>
         <p class="text">
           Each direction has two components: memory and momentum. Since \(Pk=k\)
@@ -786,9 +798,10 @@
         </p>
         <aside class="finding dynamics-summary" data-model="MDN">
           <p>
-            <strong>MDN can support oscillation.</strong> Each fixed transition per
-            head and state column has <strong>at most one non-real conjugate
-            pair.</strong>
+            <strong>MDN can support oscillation.</strong> The fixed-key,
+            scalar-gated transition with rank-one coupling analyzed here has
+            <strong>at most one non-real conjugate pair</strong> per head and state
+            column.
           </p>
         </aside>
       </section>
@@ -1033,10 +1046,10 @@
           rotations with a fixed linear state encoding.</strong>
         </p>
         <p class="text">
-          Changing coordinates preserves eigenvalues. A wider state must also
-          contain both target pairs to reproduce these rotations. To see why,
-          suppose \(s=Ez\) encodes the target state \(z\)
-          without losing information. Exact one-step updates require
+          Let \(\mathsf T\) and \(T_\star\) be fixed real linear transitions.
+          Suppose the time-independent linear map \(E\) is injective and encodes
+          the entire target state \(z\), including both rotating pairs, as
+          \(s=Ez\). Exact state dynamics require
         </p>
         <div class="equation">
           \[\mathsf T E=ET_\star.\]
@@ -1048,8 +1061,9 @@
           cannot reproduce both target frequencies exactly.
         </p>
         <p class="text">
-          This bound concerns one fixed transition. Multiple heads or compositions
-          of different transitions can combine more frequencies.
+          This argument does not rule out finite-horizon approximation,
+          time-varying encodings, or input-dependent products of transitions.
+          Multiple heads or layers can also combine more frequencies.
           <a href="#transport">CyFA</a>, which we consider next, supports several
           oscillatory pairs within a single transition, with related frequencies.
         </p>
@@ -1070,16 +1084,18 @@
         <p class="text">
           Here, \(K_t\in\mathbb R^{m\times d_k}\), \(V_t\in\mathbb R^{m\times d_v}\),
           and \(e_0\) selects the first slot. The clock increment \(\delta_t\in(0,1)\)
-          controls a fractional cyclic shift \(P(\delta_t)\). The gate \(\alpha_t\) controls
-          decay and \(\beta_t\) controls writing, with both gates in \((0,1)\). This
-          shift operator is different from the key projector used earlier. Existing
+          controls CyFA’s Fourier fractional shift \(P(\delta_t)\), rather than an
+          arbitrary transport operator. The gate \(\alpha_t\) controls decay and
+          \(\beta_t\) controls writing, with both gates in \((0,1)\). This shift
+          operator is different from the key projector used earlier. Existing
           information moves before the new key and value are written into slot zero.
         </p>
         <h3>Transport in slot space, oscillation in Fourier space</h3>
         <p class="text">
-          For an odd number of slots \(m=2p+1\), an orthogonal real Fourier basis
-          \(\Phi\) decomposes the shift into a constant mode and \(p\) cosine–sine
-          pairs:
+          We restrict the count below to an odd number of slots \(m=2p+1\).
+          Even \(m\) adds a real Nyquist mode and requires a separate count. For
+          odd \(m\), an orthogonal real Fourier basis \(\Phi\) decomposes the shift
+          into a constant mode and \(p\) cosine–sine pairs:
         </p>
         <div class="equation">
           \[
@@ -1329,7 +1345,9 @@
           <strong>CyFA's oscillators have fixed frequency ratios, and their number
           is set by the slot count \(m\).</strong> For odd \(m\), each state
           column has \((m-1)/2\) oscillatory pairs. Increasing \(m\) adds more
-          pairs whose frequencies remain tied to the same learned clock.
+          pairs whose frequencies remain tied to the same learned clock. This
+          describes the homogeneous slot transition. It does not claim that the
+          full input-driven model output contains only these frequencies.
         </p>
         <details>
           <summary>How transported states are written and read</summary>
@@ -1446,7 +1464,7 @@
                 </th>
                 <td>
                   At most one for CKDA and the scalar-gated MDN analyzed here.
-                  CyFA’s active slot transition has \((m-1)/2\).
+                  For odd \(m\), CyFA’s active slot transition has \((m-1)/2\).
                 </td>
               </tr>
               <tr>
