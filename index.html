@@ -61,7 +61,7 @@
             <strong>This post argues for treating state dynamics as one part of model
             design</strong>, alongside writing, forgetting, and readout. We compare
             decay, oscillation, and transport to understand how retained information
-            evolves and which dynamics a task may need.
+            evolves over time.
           </p>
         </aside>
         <p class="text">
@@ -118,14 +118,14 @@
             </div>
             <div class="state-demo-panel state-demo-oscillation">
               <div class="state-demo-panel-heading">
-                <h4>Oscillation</h4>
+                <h4>Decay + Oscillation</h4>
                 <p>
                   Turn while fading.
                 </p>
               </div>
               <svg viewBox="0 0 300 220" role="img"
                 aria-labelledby="state-oscillation-title state-oscillation-description">
-                <title id="state-oscillation-title">Oscillation</title>
+                <title id="state-oscillation-title">Decay plus oscillation</title>
                 <desc id="state-oscillation-description">
                   An arrow rotates as it shrinks, tracing a spiral. Its length matches
                   the decay arrow at every instant.
@@ -518,8 +518,7 @@
         <p class="text">
           To count the possible oscillatory pairs, first assume the gates are
           distinct and nonzero, ordered as \(\alpha_1&lt;\cdots&lt;\alpha_d\),
-          and that every key coordinate is nonzero. These assumptions simplify
-          the root count, not the final bound. The characteristic polynomial is
+          and that every key coordinate is nonzero. The matrix determinant lemma gives
         </p>
         <div class="equation">
           \[\chi_T(\lambda)=\prod_{i=1}^{d}(\lambda-\alpha_i)\left(1+\beta\sum_{i=1}^{d}\frac{\alpha_i k_i^2}{\lambda-\alpha_i}\right).\]
@@ -737,9 +736,7 @@
           <strong>CKDA performs better than KDA in these evaluations.</strong>
           It achieves lower PG-19 perplexity at every tested context length from
           2K to 64K and a higher average score on LongBench-E, with gains on 8 of
-          the 13 tasks. The result is consistent with a benefit from richer
-          dynamics, but this model-level comparison does not show that non-real
-          eigenvalues cause the gains.
+          the 13 tasks.
         </p>
       </section>
 

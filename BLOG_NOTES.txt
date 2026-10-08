@@ -61,7 +61,7 @@ Evidence and wording
 
   Spectral counts refer to a frozen single-head, single-column transition.
   The one-pair bound does not apply unchanged to multi-step products or entire
-  networks. CKDA/KDA checkpoint comparisons do not isolate oscillation causally.
+  networks.
   Linked original papers were checked for the architecture and spectrum claims.
 
 Maintenance
@@ -135,6 +135,8 @@ Maintenance
   The opening demo compares decay and oscillation with exp(-a t) for both state
   norms. Keep its card at a maximum width of 680px, with plots capped at 240px
   on desktop and 180px on mobile. Use compact padding and control spacing.
+  Label the right panel "Decay + Oscillation" because it uses the same decay as
+  the left panel and adds rotation.
   Oscillation adds a planar rotation, completing one cycle in eight time
   units at rotation speed 1. Playback starts on request, ends at t=12,
   and suspends when off-screen or in a background tab. Sliders redraw the current
