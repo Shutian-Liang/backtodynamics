@@ -134,6 +134,8 @@ Maintenance
   equations use aligned two-line layouts so they remain readable when the page is
   zoomed or viewed on a narrow screen. Version the dynamics stylesheet URL when
   responsive rules change so the published page does not reuse stale CSS.
+  Keep the CyFA Fourier decomposition on three aligned lines, separating the
+  definitions of P(delta), the block rotation, and omega_j.
   Keep the closing design-comparison table centered at a maximum width of 820px.
   Its prose cells wrap normally, with fixed columns, 14px text and 8px vertical
   padding on desktop. Use 13px text and 6px vertical padding on small screens.
