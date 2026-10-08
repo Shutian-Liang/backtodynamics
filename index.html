@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="assets/stylesheets/mamba-base.css">
     <link rel="stylesheet" href="assets/stylesheets/mamba.css">
     <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
-    <link rel="stylesheet" href="assets/stylesheets/dynamics.css">
+    <link rel="stylesheet" href="assets/stylesheets/dynamics.css?v=20261008-1">
     <script defer src="assets/vendor/katex/katex.min.js"></script>
     <script defer src="assets/vendor/katex/auto-render.min.js"></script>
     <script defer src="assets/scripts/dynamics.js"></script>
@@ -258,7 +258,12 @@
           system, a rotary pair follows
         </p>
         <div class="equation">
-          \[z_t=\rho_tR(\theta_t)z_{t-1},\quad R(\theta)=\begin{bmatrix}\cos\theta&amp;-\sin\theta\\\sin\theta&amp;\cos\theta\end{bmatrix}.\]
+          \[
+          \begin{aligned}
+          z_t&amp;=\rho_tR(\theta_t)z_{t-1},\\
+          R(\theta)&amp;=\begin{bmatrix}\cos\theta&amp;-\sin\theta\\\sin\theta&amp;\cos\theta\end{bmatrix}.
+          \end{aligned}
+          \]
         </div>
         <p class="text">
           Here, \(\rho_t\) sets decay and \(\theta_t\) advances phase. With
@@ -266,7 +271,12 @@
           \(J=\left[\begin{smallmatrix}0&amp;-1\\1&amp;0\end{smallmatrix}\right]\),
         </p>
         <div class="equation">
-          \[\rho_tR(\theta_t)=e^{(-a_tI+\nu_tJ)\Delta_t},\quad\operatorname{spec}(-a_tI+\nu_tJ)=\{-a_t\pm i\nu_t\}.\]
+          \[
+          \begin{aligned}
+          \rho_tR(\theta_t)&amp;=e^{(-a_tI+\nu_tJ)\Delta_t},\\
+          \operatorname{spec}(-a_tI+\nu_tJ)&amp;=\{-a_t\pm i\nu_t\}.
+          \end{aligned}
+          \]
         </div>
         <p class="text">
           D-LinOSS adds damping to an oscillator. Mamba-3 adds rotation to a decaying
