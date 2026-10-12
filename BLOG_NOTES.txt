@@ -160,6 +160,7 @@ Maintenance
     gs -q -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -r300 \
        -dTextAlphaBits=4 -dGraphicsAlphaBits=4 \
        -sOutputFile=static/dynamics/pg19-ckda-kda.png figures/pg19_ckda_kda.pdf
-  Fonts, formula rendering, results, and the paper are local. Part I links use
-  ../blog/clarity-template-main/; preserve that sibling directory or update the
-  links when publishing elsewhere. Clarity attribution and its license remain.
+  Fonts, formula rendering, results, and a historical paper copy are local.
+  Published references link to arXiv:2610.13341 and Part I at
+  https://shutian-liang.github.io/oscillationmamba/. Clarity attribution and its
+  license remain.
