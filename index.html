@@ -459,9 +459,122 @@
             timescales.
           </p>
         </aside>
+        <h3 id="gdn2">Gated DeltaNet-2: separating erase and write</h3>
+        <p class="text">
+          KDA uses the same scalar \(\beta_t\) to erase an old association and
+          write a new value. Gated DeltaNet-2 (GDN2) (<a class="paper-citation"
+            data-reference="ref-gated-deltanet2"
+            href="https://arxiv.org/html/2605.22791v1#S3.SS1">Hatamizadeh et al., 2026</a>)
+          separates these decisions into a key-side erase gate \(b_t\) and a
+          value-side write gate \(w_t\), while retaining KDA’s channel-wise decay:
+        </p>
+        <div class="equation">
+          \[
+          \begin{aligned}
+          S_t&amp;=T_tS_{t-1}+k_t(w_t\odot v_t)^\top,\\
+          T_t&amp;=\bigl[I-k_t(b_t\odot k_t)^\top\bigr]D_t,
+          \quad D_t=\operatorname{Diag}(\alpha_t).
+          \end{aligned}
+          \]
+        </div>
+        <p class="text">
+          Tying \(b_t=\beta_t\mathbf 1_{d_k}\) and
+          \(w_t=\beta_t\mathbf 1_{d_v}\) recovers KDA. Making the decay scalar
+          as well recovers Gated DeltaNet. Given the input, \(T_t\) determines
+          how the old state evolves, while \(w_t\) controls the new write.
+          We derive its frozen spectrum below using the same approach as for KDA.
+        </p>
+        <p class="text">
+          Drop the time index and set \(B=\operatorname{Diag}(b)\). Then
+          \(T=D-kk^\top BD\), which is generally asymmetric. For positive
+          \(b_i\) and \(\alpha_i\), define
+          \(P=(BD)^{1/2}\) and \(u=Pk\). Since these diagonal matrices commute,
+          rescaling by \(P\) gives
+        </p>
+        <div class="equation">
+          \[\boxed{\widetilde T=PTP^{-1}=D-uu^\top.}\]
+        </div>
+        <p class="text">
+          The right-hand side is real and symmetric, so every eigenvalue of
+          \(T\) is real. An asymmetric erase operation therefore still admits
+          a basis of real modes.
+        </p>
+        <p class="text">
+          The <a href="https://github.com/NVlabs/GatedDeltaNet-2/blob/de8476de0fecae08fc16f0bf3154900244c61c73/lit_gpt/gdn2.py">official
+          default implementation</a> uses sigmoid erase and write gates,
+          exponential decay, and L2-normalized keys. In the mathematical
+          parameterization, \(0&lt;b_i,w_j&lt;1\) and
+          \(0&lt;\alpha_i&lt;1\). With \(\|k\|_2=1\), let
+          \(r=B^{1/2}k\). Then
+        </p>
+        <div class="equation">
+          \[
+          \begin{aligned}
+          \|r\|_2^2&amp;=\sum_i b_i k_i^2&lt;1,\\
+          D-uu^\top&amp;=D^{1/2}(I-rr^\top)D^{1/2}.
+          \end{aligned}
+          \]
+        </div>
+        <p class="text">
+          Because \(I-rr^\top\) is positive definite and at most \(I\),
+          we obtain
+        </p>
+        <div class="equation">
+          \[
+          \begin{aligned}
+          &amp;0\prec D-uu^\top\preceq D\prec I\\
+          &amp;\Longrightarrow\quad \boxed{0&lt;\lambda_j(T)&lt;1.}
+          \end{aligned}
+          \]
+        </div>
+        <p class="text">
+          As with KDA, diagonalize \(\widetilde T\) with an orthogonal matrix
+          \(U\) and use \(y=U^\top Ps\). Every frozen mode decays:
+        </p>
+        <div class="equation">
+          \[
+          \begin{aligned}
+          y_{n+1,j}&amp;=\lambda_j y_{n,j},\\
+          \dot y_j&amp;=-\gamma_j y_j,
+          \quad \gamma_j=-\frac{\log\lambda_j}{\Delta}&gt;0.
+          \end{aligned}
+          \]
+        </div>
+        <p class="text">
+          This also connects to the second-order equations above. For two frozen
+          modes, \(x=y_i+y_j\) satisfies
+        </p>
+        <div class="equation">
+          \[\ddot x+(\gamma_i+\gamma_j)\dot x+\gamma_i\gamma_j x=0.\]
+        </div>
+        <p class="text">
+          Its characteristic roots are \(-\gamma_i\) and \(-\gamma_j\).
+          Distinct rates give an overdamped equation. This second-order
+          description applies to a pair of frozen modes. The full state can
+          have many modes, and their basis changes with the input. In
+          particular, a product of changing transitions need not share the
+          real-spectrum property of each step.
+        </p>
+        <p class="text">
+          The implementation also offers <a href="https://github.com/NVlabs/GatedDeltaNet-2/blob/de8476de0fecae08fc16f0bf3154900244c61c73/lit_gpt/gdn2.py#L84-L88"><code>allow_neg_eigval=True</code></a>,
+          which expands the erase range to \(0&lt;b_i&lt;2\). The same
+          similarity transform remains valid, although positive definiteness
+          can be lost. Negative real eigenvalues can produce alternating signs.
+          The frozen transition still has no non-real conjugate pair.
+        </p>
+        <aside class="finding dynamics-summary" data-model="GDN2">
+          <p>
+            <strong>GDN2: independent memory edits with real decay modes.</strong>
+            Separating erase and write gives finer control over memory editing.
+            Under the default gates, every frozen mode has a positive retention
+            factor below one. The extra gates do not introduce an underdamped
+            conjugate pair.
+          </p>
+        </aside>
         <p class="text">
           So far, the key and gates control which components decay and how quickly.
-          Can the state also oscillate while it is retained?
+          GDN2 also separates erasing from writing. Can a frozen transition
+          support an oscillatory mode while retaining the state?
         </p>
       </section>
 
@@ -1450,7 +1563,17 @@
                 </th>
                 <td>
                   KDA uses coordinate-wise gates and allows different decay rates in
-                  transformed coordinates.
+                  transformed coordinates. GDN2 retains positive real decay modes
+                  under its default gates.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  Can erase and write be controlled separately?
+                </th>
+                <td>
+                  GDN2 separates key-side erasure from value-side writing while
+                  keeping a real frozen spectrum.
                 </td>
               </tr>
               <tr>
@@ -1546,6 +1669,12 @@
           <li id="ref-mamba">
             Albert Gu and Tri Dao (2024). <a href="https://arxiv.org/abs/2312.00752">Mamba: Linear-Time Sequence Modeling with
             Selective State Spaces</a>. COLM.
+          </li>
+          <li id="ref-gated-deltanet2">
+            Ali Hatamizadeh, Yejin Choi, and Jan Kautz (2026).
+            <a href="https://arxiv.org/abs/2605.22791">Gated DeltaNet-2: Decoupling
+            Erase and Write in Linear Attention</a>. arXiv:2605.22791.
+            <a href="https://github.com/NVlabs/GatedDeltaNet-2">Official code</a>.
           </li>
           <li id="ref-mdn">
             Yulong Huang, Xiang Liu, Hongxiang Huang, Xiaopeng Lin, Zunchang Liu,

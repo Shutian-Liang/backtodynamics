@@ -4,10 +4,10 @@ English research blog, based on draft.md and the file structure of Part I.
 Entry point: index.html. Open directly in a browser; no build step is needed.
 
 Narrative
-  State evolution -> continuous generators -> LinOSS / Mamba -> DeltaNet / KDA
+  State evolution -> continuous generators -> LinOSS / Mamba -> DeltaNet / KDA / GDN2
   -> CKDA -> PG-19 and LongBench-E -> MDN -> single-step spectral limits
   -> CyFA -> dynamics as a design dimension.
-  Derivations precede model summaries. DeltaNet, Gated DeltaNet, KDA, CKDA, MDN,
+  Derivations precede model summaries. DeltaNet, Gated DeltaNet, KDA, GDN2, CKDA, MDN,
   and CyFA each end with a concise dynamics summary. Supplemental CyFA readout
   details remain in a native, keyboard-accessible details element.
   The evaluations open with the long-context observation from our Mamba-3 blog,
@@ -126,6 +126,20 @@ Maintenance
   consistently across browsers and zoom levels.
   Prefer concrete descriptions over abstract transitions and repeated summaries.
   Keep proofs readable while preserving their assumptions and fixed-transition scope.
+  GDN2 follows KDA. Cite Hatamizadeh, Choi, and Kautz (2026), arXiv:2605.22791,
+  for the recurrence and cite the official NVlabs implementation for gate ranges.
+  Code links pin de8476de0fecae08fc16f0bf3154900244c61c73 (checked 2026-10-15).
+  The spectral argument is derived here: for positive B=Diag(b) and D, use
+  P=(BD)^(1/2) to obtain PTP^(-1)=D-uu^T, u=Pk. With unit key and default
+  0<b_i<1, r=B^(1/2)k has squared norm below one, proving
+  0 < D-uu^T <= D < I in Loewner order and 0<lambda_j(T)<1.
+  allow_neg_eigval=True doubles b into (0,2), allowing negative real eigenvalues
+  while preserving the real spectrum. Keep sign alternation distinct from
+  a non-real conjugate pair. These are frozen single-step claims, not claims
+  about products of input-dependent transitions or full-network expressivity.
+  The second-order equation pairs two frozen exponential modes. Distinct rates
+  give an overdamped equation. It does not identify the whole model with a
+  second-order system or assert a Jordan mode when the rates coincide.
   Paper citations use author-year links at the first method introduction and for
   specific attributed results. References are alphabetical by first author, with
   full author lists (or Kimi Team), year, title, and venue or preprint identifier.
